@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Booking API</title>
+</head>
+<body>
+    <h1>Test Booking API</h1>
+    <button onclick="testAPI()">Test GET /api/bookings/customer/my</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Testing...';
+            
+            try {
+                const token = localStorage.getItem('ev_auth_token');
+                
+                if (!token) {
+                    resultEl.textContent = 'ERROR: No auth token found. Please login first at http://localhost:5173/login';
+                    return;
+                }
+                
+                const response = await fetch('http://localhost:8080/api/bookings/customer/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                resultEl.textContent = JSON.stringify({
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, null, 2);
+                
+            } catch (error) {
+                resultEl.textContent = 'ERROR: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
