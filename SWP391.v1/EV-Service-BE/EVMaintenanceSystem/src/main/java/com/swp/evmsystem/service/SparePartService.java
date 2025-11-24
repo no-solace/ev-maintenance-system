@@ -8,25 +8,28 @@ import com.swp.evmsystem.entity.SparePartEntity;
 import java.util.List;
 
 public interface SparePartService {
-    List<SparePartEntity> getAllSpareParts();
+    // Entity methods
+    List<SparePartEntity> getSparePartEntities();
     
-    List<SparePartEntity> getInStockParts();
+    List<SparePartEntity> getInStockPartEntities();
     
-    SparePartEntity getSparePartById(Integer id);
+    SparePartEntity getSparePartEntityById(Integer id);
     
-    SparePartEntity createSparePart(SparePartEntity sparePart);
+    SparePartEntity createSparePartEntity(SparePartEntity sparePart);
     
-    SparePartEntity updateSparePart(SparePartEntity sparePart);
+    SparePartEntity updateSparePartEntity(SparePartEntity sparePart);
     
-    void deleteSparePart(Integer id);
+    // DTO methods (for controllers)
+    // centerId = null means get all (for admin)
+    List<SparePartResponseDTO> getSpareParts(Integer centerId);
     
-    List<SparePartResponseDTO> getAllSparePartsDTO();
+    SparePartResponseDTO getSparePartById(Integer id, Integer centerId);
     
-    SparePartResponseDTO createSparePartDTO(SparePartRequestDTO request);
+    SparePartResponseDTO createSparePart(SparePartRequestDTO request, Integer userCenterId);
     
-    SparePartResponseDTO updateSparePartDTO(Integer id, SparePartRequestDTO request);
+    SparePartResponseDTO updateSparePart(Integer id, SparePartRequestDTO request, Integer centerId);
     
-    void deleteSparePartById(Integer id);
+    void deleteSparePart(Integer id, Integer centerId);
     
-    SparePartStatsDTO getStatistics();
+    SparePartStatsDTO getStatistics(Integer centerId);
 }

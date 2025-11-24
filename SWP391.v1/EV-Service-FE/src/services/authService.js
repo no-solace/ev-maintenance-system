@@ -14,8 +14,18 @@ export const authService = {
   
   // dang xuat
   logout: async () => {
-    const response = await api.post('/auth/logout');
-    return response;
+    try {
+      const response = await api.post('/auth/logout');
+      // Clear token from localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return response;
+    } catch (error) {
+      // Even if API call fails, clear local storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      throw error;
+    }
   },
   
   // lay thong tin nguoi dung hien tai
@@ -32,7 +42,7 @@ export const authService = {
   
   forgotPassword: async (email) => {
     try {
-      const response = await api.post('/auth/password/forgot', { email });
+      const response = await api.post('/password/forgot', { email });
       return response;
     } catch (error) {
       console.error('Forgot password error:', error);
@@ -43,7 +53,7 @@ export const authService = {
   // Verify OTP for password reset
   verifyOTP: async (email, otpCode) => {
     try {
-      const response = await api.post('/auth/password/verify-otp', { email, otpCode });
+      const response = await api.post('/password/verify-otp', { email, otpCode });
       return response;
     } catch (error) {
       console.error('Verify OTP error:', error);
@@ -54,7 +64,7 @@ export const authService = {
   // Reset password with OTP
   resetPasswordWithOTP: async (email, otpCode, newPassword) => {
     try {
-      const response = await api.post('/auth/password/reset', { 
+      const response = await api.post('/password/reset', { 
         email, 
         otpCode, 
         newPassword 

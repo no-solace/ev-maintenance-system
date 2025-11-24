@@ -1,5 +1,6 @@
 package com.swp.evmsystem.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.swp.evmsystem.enums.Gender;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,9 +30,15 @@ public class CustomerEntity extends UserEntity {
     Gender gender;
     @Column(name = "dob")
     LocalDate dob;
-    @OneToMany(mappedBy = "owner")
-    List<ElectricVehicleEntity> vehicle = new ArrayList<ElectricVehicleEntity>();
+    @JsonIgnore
+    @OneToMany(mappedBy = "owner" , fetch = FetchType.LAZY)
+    List<ElectricVehicleEntity> vehicles = new ArrayList<>();
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
     AddressEntity address;
+
+    public void addVehicle(ElectricVehicleEntity ev) {
+        this.vehicles.add(ev);
+        ev.setOwner(this);
+    }
 }

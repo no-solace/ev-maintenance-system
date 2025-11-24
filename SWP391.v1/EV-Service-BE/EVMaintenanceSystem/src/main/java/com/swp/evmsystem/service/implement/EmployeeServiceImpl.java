@@ -68,7 +68,24 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Technician not found with id: " + id));
         return convertToDTO(technician);
     }
-    
+
+    @Override
+    public List<EmployeeResponseDTO> getAllEmployees() {
+        log.debug("Fetching all employees (ADMIN, STAFF, TECHNICIAN)");
+        List<EmployeeEntity> employees = employeeRepository.findAll();
+        return employees.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EmployeeResponseDTO getEmployeeById(Integer id) {
+        log.debug("Fetching employee with id: {}", id);
+        EmployeeEntity employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+        return convertToDTO(employee);
+    }
+
     // Helper method to convert entity to DTO
     private EmployeeResponseDTO convertToDTO(EmployeeEntity employee) {
         return EmployeeResponseDTO.builder()

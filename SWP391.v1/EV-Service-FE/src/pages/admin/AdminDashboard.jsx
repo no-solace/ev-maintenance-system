@@ -2,51 +2,114 @@ import React, { useState, useEffect } from 'react';
 import { 
   FiDollarSign, FiUsers, FiTrendingUp, FiUserCheck,
   FiActivity, FiPackage, FiShoppingCart, FiBarChart2,
-  FiArrowUp, FiArrowDown, FiMoreVertical
+  FiArrowUp, FiArrowDown, FiMoreVertical, FiPieChart
 } from 'react-icons/fi';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import adminService from '../../services/adminService';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState('month');
-  
-  // fake mock data
-  const stats = {
-    revenue: {
-      value: 0,
-      change: 12.5,
-      trend: 'up'
-    },
-    customers: {
-      value: 1,
-      change: 8.2,
-      trend: 'up'
-    },
-    efficiency: {
-      value: 94.2,
-      change: 2.1,
-      trend: 'up'
-    },
-    utilization: {
-      value: 87.5,
-      change: -1.3,
-      trend: 'down'
+  const [stats, setStats] = useState({
+    revenue: { value: 0, change: 0, trend: 'up' },
+    customers: { value: 0, change: 0, trend: 'up' },
+    efficiency: { value: 0, change: 0, trend: 'up' },
+    utilization: { value: 0, change: 0, trend: 'up' }
+  });
+  const [serviceDistribution, setServiceDistribution] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const handleImportSampleData = async () => {
+    if (!window.confirm('Bạn có chắc muốn import 250 bookings mẫu? Hành động này không thể hoàn tác.')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/data-import/sample-bookings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success(`Đã import ${result.data} bookings thành công!`);
+        // Refresh dashboard data
+        fetchDashboardStats();
+      } else {
+        toast.error(result.message || 'Import thất bại');
+      }
+    } catch (error) {
+      console.error('Error importing data:', error);
+      toast.error('Có lỗi xảy ra khi import data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const serviceDistribution = [
-    { name: 'Battery Service', value: 45, color: '#10b981' },
-    { name: 'Software Update', value: 30, color: '#3b82f6' },
-    { name: 'General Maintenance', value: 25, color: '#f59e0b' }
-  ];
-
-  const recentActivities = [
-    { id: 1, type: 'booking', message: 'New service booking from John Doe', time: '2 hours ago' },
-    { id: 2, type: 'payment', message: 'Payment received - $1,250', time: '4 hours ago' },
-    { id: 3, type: 'review', message: 'New 5-star review from Sarah Smith', time: '6 hours ago' },
-    { id: 4, type: 'inventory', message: 'Low stock alert: Battery Pack Model S', time: '8 hours ago' },
-    { id: 5, type: 'user', message: 'New customer registration', time: '1 day ago' }
-  ];
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const result = await adminService.getDashboardStats();
+      
+      console.log('📊 Dashboard result:', result);
+      
+      if (result.success && result.data) {
+        const data = result.data;
+        
+        console.log('📊 Dashboard data:', data);
+        
+        // Format revenue - convert to millions for better readability
+        const revenueValue = Math.round((data.monthlyRevenue || 0) / 1000000 * 10) / 10; // Convert to millions with 1 decimal
+        
+        setStats({
+          revenue: { 
+            value: revenueValue,
+            change: Math.round(data.revenueChangePercent || 0), 
+            trend: (data.revenueChangePercent || 0) >= 0 ? 'up' : 'down'
+          },
+          customers: { 
+            value: data.totalCustomers || 0,
+            change: Math.round(data.customerChangePercent || 0), 
+            trend: (data.customerChangePercent || 0) >= 0 ? 'up' : 'down'
+          },
+          efficiency: { 
+            value: Math.round(data.serviceEfficiency || 0),
+            change: Math.round(data.efficiencyChangePercent || 0), 
+            trend: (data.efficiencyChangePercent || 0) >= 0 ? 'up' : 'down'
+          },
+          utilization: { 
+            value: Math.round(data.staffUtilization || 0),
+            change: Math.round(data.utilizationChangePercent || 0), 
+            trend: (data.utilizationChangePercent || 0) >= 0 ? 'up' : 'down'
+          }
+        });
+        
+        // Set service distribution and activities
+        setServiceDistribution(data.serviceDistribution || []);
+        setRecentActivities(data.recentActivities || []);
+      } else {
+        console.error('❌ Dashboard API failed:', result.error);
+        toast.error(result.error || 'Không thể tải dữ liệu dashboard');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching dashboard stats:', error);
+      console.error('Error stack:', error.stack);
+      toast.error('Có lỗi xảy ra khi tải dữ liệu: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const quickActions = [
     { label: 'Analytics', icon: FiBarChart2, path: '/admin/analytics' },
@@ -57,18 +120,28 @@ const AdminDashboard = () => {
 
   return (
     <div>
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, DINH! Here's your business overview.</p>
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Tổng quan</h1>
+            <p className="text-gray-600 mt-1">Xem tổng quan hoạt động kinh doanh</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleImportSampleData}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            >
+              📦 Import Sample Data
+            </button>
+            {loading && (
+              <div className="flex items-center gap-2 text-gray-500">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-teal-600"></div>
+                <span className="text-sm">Đang tải...</span>
+              </div>
+            )}
+          </div>
         </div>
-        <Button 
-          variant="primary"
-          icon={<FiBarChart2 />}
-          className="bg-gradient-to-r from-green-500 to-teal-600"
-        >
-          Generate Report
-        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card>
@@ -81,7 +154,7 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-gray-900">${stats.revenue.value.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">{loading ? '...' : `${stats.revenue.value.toLocaleString()} triệu VNĐ`}</p>
                 <div className="flex items-center gap-1 mt-2">
                   {stats.revenue.trend === 'up' ? (
                     <FiArrowUp className="text-green-500" />
@@ -89,7 +162,7 @@ const AdminDashboard = () => {
                     <FiArrowDown className="text-red-500" />
                   )}
                   <span className={`text-sm ${stats.revenue.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-                    {stats.revenue.change}%
+                    {stats.revenue.trend === 'up' ? '+' : ''}{stats.revenue.change}%
                   </span>
                   <span className="text-sm text-gray-500">from last month</span>
                 </div>
@@ -107,10 +180,16 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-gray-900">{stats.customers.value}</p>
+                <p className="text-3xl font-bold text-gray-900">{loading ? '...' : stats.customers.value}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <FiArrowUp className="text-green-500" />
-                  <span className="text-sm text-green-500">+{stats.customers.change}%</span>
+                  {stats.customers.trend === 'up' ? (
+                    <FiArrowUp className="text-green-500" />
+                  ) : (
+                    <FiArrowDown className="text-red-500" />
+                  )}
+                  <span className={`text-sm ${stats.customers.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                    {stats.customers.trend === 'up' ? '+' : ''}{stats.customers.change}%
+                  </span>
                   <span className="text-sm text-gray-500">from last month</span>
                 </div>
               </div>
@@ -127,10 +206,16 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-gray-900">{stats.efficiency.value}%</p>
+                <p className="text-3xl font-bold text-gray-900">{loading ? '...' : `${stats.efficiency.value}%`}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <FiArrowUp className="text-green-500" />
-                  <span className="text-sm text-green-500">+{stats.efficiency.change}%</span>
+                  {stats.efficiency.trend === 'up' ? (
+                    <FiArrowUp className="text-green-500" />
+                  ) : (
+                    <FiArrowDown className="text-red-500" />
+                  )}
+                  <span className={`text-sm ${stats.efficiency.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                    {stats.efficiency.trend === 'up' ? '+' : ''}{stats.efficiency.change}%
+                  </span>
                   <span className="text-sm text-gray-500">from last month</span>
                 </div>
               </div>
@@ -147,10 +232,16 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-3xl font-bold text-gray-900">{stats.utilization.value}%</p>
+                <p className="text-3xl font-bold text-gray-900">{loading ? '...' : `${stats.utilization.value}%`}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <FiArrowDown className="text-red-500" />
-                  <span className="text-sm text-red-500">{stats.utilization.change}%</span>
+                  {stats.utilization.trend === 'up' ? (
+                    <FiArrowUp className="text-green-500" />
+                  ) : (
+                    <FiArrowDown className="text-red-500" />
+                  )}
+                  <span className={`text-sm ${stats.utilization.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                    {stats.utilization.trend === 'up' ? '+' : ''}{stats.utilization.change}%
+                  </span>
                   <span className="text-sm text-gray-500">from last month</span>
                 </div>
               </div>
@@ -172,31 +263,41 @@ const AdminDashboard = () => {
             </div>
           </Card.Header>
           <Card.Content className="p-6">
-            <div className="space-y-4">
-              {serviceDistribution.map((service, index) => (
-                <div key={index}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: service.color }}
-                      />
-                      <span className="text-sm text-gray-700">{service.name}</span>
+            {serviceDistribution.length === 0 ? (
+              <div className="text-center py-8">
+                <FiPieChart className="mx-auto text-4xl text-gray-400 mb-3" />
+                <p className="text-gray-500">Chưa có dữ liệu dịch vụ</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {serviceDistribution.map((service, index) => (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: service.color }}
+                        />
+                        <span className="text-sm text-gray-700">{service.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">{service.count} lượt</span>
+                        <span className="text-sm font-medium text-gray-900">{service.percentage}%</span>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{service.value}%</span>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${service.percentage}%`,
+                          backgroundColor: service.color 
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${service.value}%`,
-                        backgroundColor: service.color 
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
                 View Detailed Analytics

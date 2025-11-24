@@ -16,16 +16,16 @@ import Button from "../../ui/Button";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
 import bookingService from "../../../services/bookingService";
-
+// giao dien dat lich thanh cong
 const BookingSuccess = ({ data, onNext, paymentCompleted = false }) => {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   
-  // Check if returning from payment success
+  // Kiểm tra nếu quay lại từ trang thanh toán thành công
   const urlParams = new URLSearchParams(window.location.search);
   const isPaymentSuccess = paymentCompleted || urlParams.get('paymentSuccess') === 'true';
 
   useEffect(() => {
-    // hieu ung sau khi dat lich thang cong,add npm canvas
+    // hiệu ứng confetti khi đặt lịch thành công, add npm canvas-confetti
     confetti({
       particleCount: 100,
       spread: 70,
@@ -37,7 +37,7 @@ const BookingSuccess = ({ data, onNext, paymentCompleted = false }) => {
     const vehicle = vinfastModels.find((v) => v.id === data.vehicle);
     return vehicle?.name || "";
   };
-
+  // lay tom tat dich vu
   const getServiceSummary = () => {
     if (data.service?.id === "maintenance") {
       return `${data.service.name} - ${data.servicePackage?.name}`;
@@ -48,7 +48,7 @@ const BookingSuccess = ({ data, onNext, paymentCompleted = false }) => {
     }
     return "";
   };
-
+  // định dạng ngày tháng
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const days = [
@@ -62,54 +62,7 @@ const BookingSuccess = ({ data, onNext, paymentCompleted = false }) => {
     ];
     return `${days[date.getDay()]}, ${date.toLocaleDateString("vi-VN")}`;
   };
-
-  const handleDownloadReceipt = () => {
-    // tao thong tin dat lich ra file text
-    const receipt = `
-BIÊN NHẬN ĐẶT LỊCH DỊCH VỤ VINFAST
-=====================================
-Mã đặt lịch: ${data.bookingId}
-Ngày đặt: ${new Date().toLocaleString("vi-VN")}
-Trạng thái: ĐÃ XÁC NHẬN
-
-THÔNG TIN KHÁCH HÀNG
--------------------------------------
-Họ tên: ${data.customerInfo.name}
-Số điện thoại: ${data.customerInfo.phone}
-${data.customerInfo.email ? `Email: ${data.customerInfo.email}` : ''}
-${data.customerInfo.address ? `Địa chỉ: ${data.customerInfo.address}` : ''}
-
-THÔNG TIN DỊCH VỤ
--------------------------------------
-Trung tâm: ${data.center?.name}
-Địa chỉ: ${data.center?.address}
-Ngày hẹn: ${formatDate(data.date)}
-Giờ hẹn: ${data.timeSlot}
-Xe: VinFast ${getVehicleName()}
-Dịch vụ: ${getServiceSummary()}
-${data.notes ? `Ghi chú: ${data.notes}` : ""}
-
-LƯU Ý
--------------------------------------
-- Vui lòng đến đúng giờ đã hẹn
-- Mang theo giấy tờ xe
-- Liên hệ hotline nếu cần hỗ trợ
-
-Hotline: ${data.center?.phone}
-=====================================
-    `;
-
-    // tao va tai file text
-    const blob = new Blob([receipt], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `VinFast_Booking_${data.bookingId}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
+  // xử lý thanh toán
   const handlePayment = async () => {
     if (!data.bookingId) {
       toast.error("Không tìm thấy mã đặt lịch");
@@ -125,7 +78,7 @@ Hotline: ${data.center?.phone}
 
       if (paymentResponse.success && paymentResponse.paymentUrl) {
         toast.success("Đang chuyển đến trang thanh toán...");
-        // Redirect to VNPay
+        // Chuyển hướng đến VNPay
         window.location.href = paymentResponse.paymentUrl;
       } else {
         toast.error(paymentResponse.error || "Không thể tạo thanh toán");
@@ -137,11 +90,11 @@ Hotline: ${data.center?.phone}
       setIsPaymentLoading(false);
     }
   };
-
+  // xem lịch đặt lịch
   const handleViewBookings = () => {
     window.location.href = "/app/my-bookings";
   };
-
+  // giao dien modal dat lich thanh cong
   return (
     <div className="text-center">
       <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -257,60 +210,71 @@ Hotline: ${data.center?.phone}
         </div>
       </div>
       {!isPaymentSuccess ? (
-        <div className="flex justify-center gap-3">
-          <Button
-            onClick={handleDownloadReceipt}
-            variant="outline"
-            className="border-gray-300"
-          >
-            <FiDownload className="mr-2" />
-            Tải biên nhận
-          </Button>
+        <div className="flex flex-col items-center gap-4">
+          {/* Warning notice */}
+          <div className="mb-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-2xl">
+            <p className="text-sm text-yellow-800 text-center">
+              <strong>⚠️ Lưu ý:</strong> Vui lòng thanh toán đặt cọc để xác nhận lịch hẹn và tải biên nhận.
+            </p>
+          </div>
+          
+          <div className="flex justify-center gap-3">
+            <Button
+              onClick={handlePayment}
+              disabled={isPaymentLoading}
+              className="bg-green-600 hover:bg-green-700 text-white px-8"
+            >
+              {isPaymentLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <FiCreditCard className="mr-2" />
+                  Thanh toán ngay
+                </>
+              )}
+            </Button>
 
-          <Button
-            onClick={handlePayment}
-            disabled={isPaymentLoading}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            {isPaymentLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                Đang xử lý...
-              </>
-            ) : (
-              <>
-                <FiCreditCard className="mr-2" />
-                Thanh toán ngay
-              </>
-            )}
-          </Button>
-
-          <Button
-            onClick={handleViewBookings}
-            variant="outline"
-            className="border-blue-500 text-blue-600 hover:bg-blue-50"
-          >
-            Xem lịch hẹn
-          </Button>
+            <Button
+              onClick={handleViewBookings}
+              variant="outline"
+              className="border-blue-500 text-blue-600 hover:bg-blue-50"
+            >
+              Xem lịch hẹn
+            </Button>
+          </div>
         </div>
       ) : (
-        <div className="flex justify-center gap-3">
-          <Button
-            onClick={handleDownloadReceipt}
-            variant="outline"
-            className="border-gray-300"
-          >
-            <FiDownload className="mr-2" />
-            Tải biên nhận
-          </Button>
-
-          <Button
-            onClick={handleViewBookings}
-            className="bg-teal-600 hover:bg-teal-700 text-white"
-          >
-            <FiCheckCircle className="mr-2" />
-            Xem lịch hẹn
-          </Button>
+        <div className="flex flex-col items-center gap-4">
+          {/* Success notice with email info */}
+          <div className="mb-2 p-4 bg-green-50 border border-green-200 rounded-lg max-w-2xl">
+            <div className="flex items-start gap-3">
+              <FiCheckCircle className="text-green-600 text-xl mt-0.5 flex-shrink-0" />
+              <div className="text-left">
+                <p className="text-sm text-green-800 font-medium mb-1">
+                  ✅ Thanh toán thành công!
+                </p>
+                <p className="text-sm text-green-700">
+                  Biên nhận đã được gửi đến email: <strong>{data.customerInfo.email || 'của bạn'}</strong>
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  (Vui lòng kiểm tra hòm thư đến hoặc thư mục spam)
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-center gap-3">
+            <Button
+              onClick={handleViewBookings}
+              className="bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              <FiCheckCircle className="mr-2" />
+              Xem lịch hẹn
+            </Button>
+          </div>
         </div>
       )}
     </div>

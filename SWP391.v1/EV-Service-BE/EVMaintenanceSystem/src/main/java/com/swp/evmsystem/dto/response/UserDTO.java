@@ -10,5 +10,12 @@ import lombok.experimental.FieldDefaults;
 public class UserDTO {
     int userId;
     String fullName;
+    String phone;
+    String email;
     String role;
+    String status;
+    
+    // Employee specific fields
+    Integer centerId;
+    String centerName;
 }

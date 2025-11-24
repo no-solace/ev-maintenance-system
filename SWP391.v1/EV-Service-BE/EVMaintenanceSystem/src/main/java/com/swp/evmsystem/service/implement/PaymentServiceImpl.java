@@ -1,30 +1,28 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.dto.PaymentRequestDTO;
-import com.swp.evmsystem.dto.PaymentResponseDTO;
+import com.swp.evmsystem.constants.BookingConstants;
+import com.swp.evmsystem.dto.request.PaymentRequestDTO;
+import com.swp.evmsystem.dto.response.PaymentResponseDTO;
 import com.swp.evmsystem.dto.PaymentStatsDTO;
 import com.swp.evmsystem.entity.BookingEntity;
-import com.swp.evmsystem.entity.EmployeeEntity;
-import com.swp.evmsystem.entity.InspectionEntity;
-import com.swp.evmsystem.entity.InspectionItemEntity;
 import com.swp.evmsystem.entity.PaymentEntity;
 import com.swp.evmsystem.entity.VehicleReceptionEntity;
 import com.swp.evmsystem.enums.PaymentMethod;
 import com.swp.evmsystem.enums.PaymentStatus;
 import com.swp.evmsystem.exception.BusinessException;
 import com.swp.evmsystem.exception.ResourceNotFoundException;
-import com.swp.evmsystem.repository.BookingRepository;
-import com.swp.evmsystem.repository.InspectionRepository;
-import com.swp.evmsystem.repository.PaymentRepository;
-import com.swp.evmsystem.repository.VehicleReceptionRepository;
-import com.swp.evmsystem.repository.UserRepository;
+import com.swp.evmsystem.repository.*;
 import com.swp.evmsystem.service.PaymentService;
+import com.swp.evmsystem.service.VNPayService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.awt.print.Book;
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -33,37 +31,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
     
     private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
-    
-    @Autowired
-    private PaymentRepository paymentRepository;
-    
-    @Autowired
-    private VehicleReceptionRepository receptionRepository;
-    
-    @Autowired
-    private BookingRepository bookingRepository;
-    
-    @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    private InspectionRepository inspectionRepository;
-    
-    @Autowired
-    private com.swp.evmsystem.service.VNPayService vnPayService;
-    
-    @Autowired
-    private com.swp.evmsystem.repository.ElectricVehicleRepository electricVehicleRepository;
+
+    final private PaymentRepository paymentRepository;
+    final private VehicleReceptionRepository receptionRepository;
+    final private BookingRepository bookingRepository;
+    final private VNPayService vnPayService;
+    final private ElectricVehicleRepository electricVehicleRepository;
     
     @Override
     @Transactional
     public PaymentResponseDTO createPayment(PaymentRequestDTO requestDTO) {
         logger.info("Creating payment for customer: {}", requestDTO.getCustomerName());
-        
-        // Generate invoice number
         String invoiceNumber = generateInvoiceNumber();
         
         // Build payment entity
@@ -84,7 +66,10 @@ public class PaymentServiceImpl implements PaymentService {
                 .notes(requestDTO.getNotes());
         
         // Calculate final amount
-        double finalAmount = requestDTO.getTotalAmount() - (requestDTO.getDiscountAmount() != null ? requestDTO.getDiscountAmount() : 0.0);
+        double discountAmt = requestDTO.getDiscountAmount() != null ? requestDTO.getDiscountAmount() : 0.0;
+        double finalAmount = requestDTO.getTotalAmount() - discountAmt;
+        logger.info("💰 Payment calculation: Total={}, Discount={}, Final={}", 
+            requestDTO.getTotalAmount(), discountAmt, finalAmount);
         builder.finalAmount(finalAmount);
         
         // Link to reception if provided
@@ -227,16 +212,24 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentEntity updatedPayment = paymentRepository.save(payment);
         logger.info("Payment {} marked as COMPLETED with method {}", paymentId, payment.getPaymentMethod());
         
-        // Update vehicle maintenance status to AVAILABLE after payment completed
+        // Update reception status to PAID when payment is completed
         // Only for service payments (not booking deposits)
-        if (payment.getReception() != null && payment.getLicensePlate() != null) {
-            String licensePlate = payment.getLicensePlate();
-            var vehicleOpt = electricVehicleRepository.findByLicensePlate(licensePlate);
-            if (vehicleOpt.isPresent()) {
-                var vehicle = vehicleOpt.get();
-                vehicle.setMaintenanceStatus(com.swp.evmsystem.enums.EvMaintenanceStatus.AVAILABLE);
-                electricVehicleRepository.save(vehicle);
-                logger.info("Updated vehicle {} maintenance status to AVAILABLE after payment completion", licensePlate);
+        if (payment.getReception() != null) {
+            VehicleReceptionEntity reception = payment.getReception();
+            reception.setStatus(com.swp.evmsystem.enums.ReceptionStatus.PAID);
+            receptionRepository.save(reception);
+            logger.info("Updated reception #{} status to PAID after payment completion", reception.getReceptionId());
+            
+            // Update vehicle maintenance status to AVAILABLE
+            if (payment.getLicensePlate() != null) {
+                String licensePlate = payment.getLicensePlate();
+                var vehicleOpt = electricVehicleRepository.findByLicensePlate(licensePlate);
+                if (vehicleOpt.isPresent()) {
+                    var vehicle = vehicleOpt.get();
+                    vehicle.setMaintenanceStatus(com.swp.evmsystem.enums.EvMaintenanceStatus.AVAILABLE);
+                    electricVehicleRepository.save(vehicle);
+                    logger.info("Updated vehicle {} maintenance status to AVAILABLE after payment completion", licensePlate);
+                }
             }
         }
         
@@ -294,49 +287,13 @@ public class PaymentServiceImpl implements PaymentService {
         }
         
         // Check if reception is completed
-        if (!"COMPLETED".equalsIgnoreCase(reception.getStatus())) {
+        if (!"COMPLETED".equalsIgnoreCase(reception.getStatus().name())) {
             throw new IllegalStateException("Can only create payment for completed receptions. Current status: " + reception.getStatus());
         }
         
-        // Calculate total from APPROVED inspection items only
-        double totalAmount = reception.getTotalCost(); // Default to reception total cost
+        // Use reception total cost
+        double totalAmount = reception.getTotalCost();
         String serviceDescription = reception.getNotes();
-        
-        // Check if there's an inspection for this reception
-        var inspectionOpt = inspectionRepository.findByReception_ReceptionId(receptionId);
-        if (inspectionOpt.isPresent()) {
-            InspectionEntity inspection = inspectionOpt.get();
-            
-            // Only calculate from items if inspection is APPROVED
-            if (inspection.getStatus() == com.swp.evmsystem.enums.InspectionStatus.APPROVED && 
-                inspection.getItems() != null && !inspection.getItems().isEmpty()) {
-                
-                double itemsCost = inspection.getItems().stream()
-                        .mapToDouble(item -> item.getUnitPrice() * item.getQuantity())
-                        .sum();
-                
-                logger.info("Calculated inspection items cost: {}", itemsCost);
-                
-                // Use inspection items cost if available
-                if (itemsCost > 0) {
-                    totalAmount = itemsCost;
-                    
-                    // Build service description from inspection items
-                    StringBuilder descBuilder = new StringBuilder();
-                    if (inspection.getGeneralNotes() != null && !inspection.getGeneralNotes().isEmpty()) {
-                        descBuilder.append("Ghi chú: ").append(inspection.getGeneralNotes()).append("\n");
-                    }
-                    descBuilder.append("Các phụ tùng đã thay: ");
-                    inspection.getItems().forEach(item -> descBuilder
-                            .append("\n- ")
-                            .append(item.getSparePart().getSparePartName())
-                            .append(" x")
-                            .append(item.getQuantity()));
-                    
-                    serviceDescription = descBuilder.toString();
-                }
-            }
-        }
         
         // Check if this reception is linked to a booking with deposit
         double depositAmount = 0.0;
@@ -377,9 +334,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .customerPhone(reception.getCustomerPhone())
                 .customerEmail(reception.getCustomerEmail())
                 .vehicleInfo(reception.getVehicleModel())
-                .licensePlate(reception.getLicensePlate())
-                .serviceName(reception.getServices()) // Services as comma-separated string
+                .licensePlate(reception.getLicensePlate())// Services as comma-separated string
                 .serviceDescription(serviceDescription)
+                .serviceName("Thanh toán phiếu tiếp nhận #" + receptionId)
                 .serviceDate(reception.getCreatedAt())
                 .totalAmount(totalAmount)
                 .discountAmount(depositAmount) // Deduct deposit if exists
@@ -395,25 +352,27 @@ public class PaymentServiceImpl implements PaymentService {
         
         return createPayment(requestDTO);
     }
-    
+
+    private BookingEntity getBooking(Integer bookingId) {
+        return bookingRepository.findById(bookingId).orElseThrow(() -> new ResourceNotFoundException("Booking not found with ID: " + bookingId));
+    }
+
     @Override
     @Transactional
     public Map<String, Object> createBookingDepositPayment(Integer bookingId) {
-        logger.info("Creating booking deposit payment for booking ID: {}", bookingId);
-        
         try {
-            // Create payment record for deposit
+            BookingEntity booking = getBooking(bookingId);
             PaymentRequestDTO paymentRequest = PaymentRequestDTO.builder()
                     .bookingId(bookingId)
-                    .customerName("Booking #" + bookingId)
-                    .customerPhone("-")
-                    .customerEmail("-")
-                    .vehicleInfo("-")
-                    .licensePlate("-")
+                    .customerName(booking.getCustomerName())
+                    .customerPhone(booking.getCustomerName())
+                    .customerEmail(booking.getCustomerEmail())
+                    .vehicleInfo(booking.getVehicle().getLicensePlate())
+                    .licensePlate(booking.getVehicle().getLicensePlate())
                     .serviceName("Đặt cọc booking #" + bookingId)
-                    .serviceDescription(com.swp.evmsystem.constants.BookingConstants.DEPOSIT_POLICY)
+                    .serviceDescription(BookingConstants.DEPOSIT_POLICY)
                     .serviceDate(LocalDateTime.now())
-                    .totalAmount(Double.valueOf(com.swp.evmsystem.constants.BookingConstants.DEPOSIT_AMOUNT))
+                    .totalAmount((double) BookingConstants.DEPOSIT_AMOUNT)
                     .discountAmount(0.0)
                     .paymentMethod(PaymentMethod.VNPAY)
                     .paymentStatus(PaymentStatus.PENDING)
@@ -428,25 +387,25 @@ public class PaymentServiceImpl implements PaymentService {
             // Create VNPay payment URL
             String orderInfo = "Đặt cọc booking #" + bookingId;
             String paymentUrl = vnPayService.createPaymentUrl(
-                    com.swp.evmsystem.constants.BookingConstants.DEPOSIT_AMOUNT,
+                    BookingConstants.DEPOSIT_AMOUNT,
                     orderInfo,
                     payment.getPaymentId().longValue(),
                     invoiceNumber
             );
             
             logger.info("Created deposit payment - Booking ID: {}, Payment ID: {}, Invoice: {}, Amount: {}",
-                    bookingId, payment.getPaymentId(), invoiceNumber, com.swp.evmsystem.constants.BookingConstants.DEPOSIT_AMOUNT);
+                    bookingId, payment.getPaymentId(), invoiceNumber, BookingConstants.DEPOSIT_AMOUNT);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("paymentUrl", paymentUrl);
-            response.put("depositAmount", com.swp.evmsystem.constants.BookingConstants.DEPOSIT_AMOUNT);
-            response.put("depositPolicy", com.swp.evmsystem.constants.BookingConstants.DEPOSIT_POLICY);
+            response.put("depositAmount", BookingConstants.DEPOSIT_AMOUNT);
+            response.put("depositPolicy", BookingConstants.DEPOSIT_POLICY);
             response.put("invoiceNumber", invoiceNumber);
             response.put("paymentId", payment.getPaymentId());
             
             return response;
-        } catch (java.io.UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             logger.error("Error creating VNPay payment URL for booking {}", bookingId, e);
             throw new BusinessException("Failed to create payment URL: " + e.getMessage(), e);
         }

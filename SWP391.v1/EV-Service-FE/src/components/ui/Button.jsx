@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
-
+// giao dien button
 const Button = React.forwardRef(({
   className,
   variant = 'primary',
@@ -12,6 +12,7 @@ const Button = React.forwardRef(({
   iconPosition = 'left',
   ...props
 }, ref) => {
+  // cac variant cua button
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
     secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
@@ -20,7 +21,7 @@ const Button = React.forwardRef(({
     ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
     link: 'text-primary-600 hover:text-primary-700 underline-offset-4 hover:underline',
   };
-  
+   // cac size cua button
   const sizes = {
     xs: 'px-2.5 py-1.5 text-xs',
     sm: 'px-3 py-2 text-sm',
@@ -30,7 +31,7 @@ const Button = React.forwardRef(({
   };
   
   const isDisabled = disabled || loading;
-  
+  // tra ve button
   return (
     <button
       ref={ref}

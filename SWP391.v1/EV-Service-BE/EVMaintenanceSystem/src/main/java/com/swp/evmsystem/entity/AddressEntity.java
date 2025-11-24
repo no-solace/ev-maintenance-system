@@ -22,6 +22,14 @@ public class AddressEntity {
     @JoinColumn(name = "ward_id")
     @ManyToOne(fetch = FetchType.LAZY)
     WardEntity ward;
+    
+    // Geographic coordinates for location-based features
+    @Column(name = "latitude")
+    Double latitude;
+    
+    @Column(name = "longitude")
+    Double longitude;
+    
     @Override
     public String toString() {
         return addressLine + ", " + ward.toString();

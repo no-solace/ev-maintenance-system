@@ -88,12 +88,35 @@ const StaffPayments = () => {
     if (!selectedInvoice) return;
 
     try {
+      // Check if final amount is 0 (fully paid by deposit)
+      if (selectedInvoice.finalAmount === 0) {
+        // Automatically mark as paid since deposit covers everything
+        const result = await paymentService.markAsPaid(selectedInvoice.id, 'CASH');
+        if (result.success) {
+          setInvoices(invoices.map(inv => 
+            inv.id === selectedInvoice.id ? { ...inv, paymentStatus: 'paid', paymentMethod: 'Tiền cọc' } : inv
+          ));
+          toast.success('Đã xác nhận thanh toán! (Đã thanh toán đủ bằng tiền cọc)');
+          setShowPaymentModal(false);
+          fetchPayments();
+        } else {
+          toast.error(result.error);
+        }
+        return;
+      }
+
       // Handle VNPay e-transfer
       if (paymentMethod === 'VNPAY') {
         console.log('🔵 Starting VNPay payment for invoice:', selectedInvoice.invoiceNumber);
         console.log('💰 Total amount:', selectedInvoice.totalAmount);
         console.log('💰 Deposit deducted:', selectedInvoice.discountAmount);
         console.log('💰 Final amount to pay:', selectedInvoice.finalAmount);
+        
+        // VNPay doesn't accept 0 amount
+        if (selectedInvoice.finalAmount <= 0) {
+          toast.error('Số tiền thanh toán phải lớn hơn 0đ để sử dụng VNPay');
+          return;
+        }
         
         toast.loading('Đang tạo liên kết thanh toán...');
         
@@ -473,6 +496,16 @@ const StaffPayments = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phương thức thanh toán <span className="text-red-500">*</span>
                 </label>
+                
+                {/* Show message if amount is 0 */}
+                {selectedInvoice.finalAmount === 0 && (
+                  <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800">
+                      ✅ <strong>Đã thanh toán đủ bằng tiền cọc!</strong> Nhấn "Xác nhận" để hoàn tất.
+                    </p>
+                  </div>
+                )}
+                
                 <div className="space-y-3">
                   {/* Cash Payment Option */}
                   <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
@@ -489,14 +522,25 @@ const StaffPayments = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">💵</span>
-                        <span className="font-semibold text-gray-900">Tiền mặt</span>
+                        <span className="font-semibold text-gray-900">
+                          {selectedInvoice.finalAmount === 0 ? 'Xác nhận hoàn tất' : 'Tiền mặt'}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Thanh toán trực tiếp bằng tiền mặt</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {selectedInvoice.finalAmount === 0 
+                          ? 'Xác nhận đã thanh toán đủ bằng tiền cọc' 
+                          : 'Thanh toán trực tiếp bằng tiền mặt'}
+                      </p>
                     </div>
                   </label>
 
-                  {/* VNPay E-Transfer Option */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  {/* VNPay E-Transfer Option - Disabled if amount is 0 */}
+                  <label 
+                    className={`flex items-center p-4 border-2 rounded-lg transition-colors ${
+                      selectedInvoice.finalAmount === 0 
+                        ? 'opacity-50 cursor-not-allowed bg-gray-100' 
+                        : 'cursor-pointer hover:bg-gray-50'
+                    }`}
                     style={{ borderColor: paymentMethod === 'VNPAY' ? '#9333ea' : '#d1d5db' }}
                   >
                     <input
@@ -505,21 +549,31 @@ const StaffPayments = () => {
                       value="VNPAY"
                       checked={paymentMethod === 'VNPAY'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="mr-3 text-purple-600 focus:ring-purple-500"
+                      disabled={selectedInvoice.finalAmount === 0}
+                      className="mr-3 text-purple-600 focus:ring-purple-500 disabled:cursor-not-allowed"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <FiCreditCard className="text-xl text-blue-600" />
                         <span className="font-semibold text-gray-900">VNPay E-Transfer</span>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Recommended</span>
+                        {selectedInvoice.finalAmount > 0 && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Recommended</span>
+                        )}
+                        {selectedInvoice.finalAmount === 0 && (
+                          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">Không khả dụng</span>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">Chuyển khoản qua cổng thanh toán VNPay</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {selectedInvoice.finalAmount === 0 
+                          ? 'VNPay không hỗ trợ thanh toán 0đ' 
+                          : 'Chuyển khoản qua cổng thanh toán VNPay'}
+                      </p>
                     </div>
                   </label>
                 </div>
 
                 {/* Payment Method Info */}
-                {paymentMethod === 'VNPAY' && (
+                {paymentMethod === 'VNPAY' && selectedInvoice.finalAmount > 0 && (
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-800">
                       ℹ️ Bạn sẽ được chuyển đến trang thanh toán VNPay để hoàn tất giao dịch.
@@ -541,7 +595,12 @@ const StaffPayments = () => {
                   onClick={handlePayment}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
-                  {paymentMethod === 'VNPAY' ? (
+                  {selectedInvoice.finalAmount === 0 ? (
+                    <>
+                      <FiCheck className="mr-1" />
+                      Xác nhận hoàn tất
+                    </>
+                  ) : paymentMethod === 'VNPAY' ? (
                     <>
                       <FiCreditCard className="mr-1" />
                       Thanh toán VNPay

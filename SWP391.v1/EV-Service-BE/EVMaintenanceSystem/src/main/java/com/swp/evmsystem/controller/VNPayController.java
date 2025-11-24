@@ -3,7 +3,7 @@ package com.swp.evmsystem.controller;
 import com.swp.evmsystem.service.VNPayService;
 import com.swp.evmsystem.service.PaymentService;
 import com.swp.evmsystem.service.BookingService;
-import com.swp.evmsystem.dto.PaymentResponseDTO;
+import com.swp.evmsystem.dto.response.PaymentResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +44,7 @@ public class VNPayController {
         if (amount == null || amount <= 0) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
-                "message", "Số tiền không hợp lệ"
+                "message", "Số tiền không hợp lệ. VNPay không hỗ trợ thanh toán với số tiền 0đ hoặc âm."
             ));
         }
         if (invoiceNumber == null || invoiceNumber.isEmpty()) {
@@ -65,30 +65,87 @@ public class VNPayController {
     /**
      * Handle VNPay return callback
      * GET /api/vnpay/return
+     * This endpoint can be called by:
+     * 1. VNPay directly (redirect from payment gateway)
+     * 2. Frontend (to verify payment result)
      */
     @GetMapping("/return")
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> handleReturn(@RequestParam Map<String, String> params) {
-        Map<String, String> mutableParams = new HashMap<>(params);
-        boolean isValid = vnPayService.validateSignature(new HashMap<>(mutableParams));
-        if (!isValid) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("success", false, "message", "Chữ ký không hợp lệ"));
-        }
-        Map<String, Object> result = vnPayService.parseVNPayResponse(mutableParams);
-        if ((Boolean) result.get("success")) {
-            String paymentIdStr = (String) result.get("paymentId");
-            if (paymentIdStr != null) {
-                Integer paymentId = Integer.parseInt(paymentIdStr);
-                paymentService.markAsPaid(paymentId, "VNPAY");
-                paymentService.markAsCompleted(paymentId);
-                PaymentResponseDTO payment = paymentService.getPaymentById(paymentId);
-                if (payment.getBookingId() != null) {
-                    bookingService.confirmBookingDeposit(payment.getBookingId());
-                }
+        try {
+            System.out.println("🔵 VNPay return endpoint called with params: " + params.keySet());
+            
+            if (params.isEmpty()) {
+                System.out.println("❌ No parameters received");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, 
+                    "message", "Không nhận được thông tin từ VNPay"
+                ));
             }
+            
+            Map<String, String> mutableParams = new HashMap<>(params);
+            boolean isValid = vnPayService.validateSignature(new HashMap<>(mutableParams));
+            
+            System.out.println("🔐 Signature validation: " + (isValid ? "VALID" : "INVALID"));
+            
+            if (!isValid) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Chữ ký không hợp lệ"));
+            }
+            
+            Map<String, Object> result = vnPayService.parseVNPayResponse(mutableParams);
+            System.out.println("📊 Payment result: " + result);
+            System.out.println("📝 Invoice number: " + result.get("invoiceNumber"));
+            System.out.println("💳 Payment ID: " + result.get("paymentId"));
+            
+            if ((Boolean) result.get("success")) {
+                String paymentIdStr = (String) result.get("paymentId");
+                if (paymentIdStr != null) {
+                    Integer paymentId = Integer.parseInt(paymentIdStr);
+                    System.out.println("✅ Processing successful payment for ID: " + paymentId);
+                    
+                    // Get payment details BEFORE updating
+                    PaymentResponseDTO paymentBefore = paymentService.getPaymentById(paymentId);
+                    System.out.println("📋 Payment details:");
+                    System.out.println("   - Invoice: " + paymentBefore.getInvoiceNumber());
+                    System.out.println("   - BookingId: " + paymentBefore.getBookingId());
+                    System.out.println("   - ReceptionId: " + paymentBefore.getReceptionId());
+                    System.out.println("   - Amount: " + paymentBefore.getFinalAmount());
+                    
+                    paymentService.markAsPaid(paymentId, "VNPAY");
+                    paymentService.markAsCompleted(paymentId);
+                    PaymentResponseDTO payment = paymentService.getPaymentById(paymentId);
+                    
+                    // Only confirm booking deposit if this is a BOOKING DEPOSIT payment
+                    // (has bookingId but NO receptionId)
+                    if (payment.getBookingId() != null && payment.getReceptionId() == null) {
+                        System.out.println("📝 ✅ This is a BOOKING DEPOSIT payment, confirming booking #" + payment.getBookingId());
+                        bookingService.confirmBookingDeposit(payment.getBookingId());
+                        System.out.println("✅ Booking confirmed successfully");
+                    } else if (payment.getReceptionId() != null) {
+                        System.out.println("🔧 ✅ This is a SERVICE payment for reception #" + payment.getReceptionId());
+                        // Service payment - already handled in markAsCompleted
+                    } else {
+                        System.out.println("⚠️ WARNING: Payment has no bookingId or receptionId!");
+                    }
+                }
+            } else {
+                System.out.println("❌ Payment failed with response code: " + result.get("responseCode"));
+            }
+            
+            // Return JSON response
+            // Note: VNPay will redirect directly to frontend URLs configured in VNPayServiceImpl
+            // This endpoint is called by frontend to verify/process the payment result
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.err.println("❌ Error processing VNPay return: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                        "success", false, 
+                        "message", "Lỗi xử lý kết quả thanh toán: " + e.getMessage()
+                    ));
         }
-        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/ipn")
@@ -110,7 +167,10 @@ public class VNPayController {
                 paymentService.markAsPaid(paymentId, "VNPAY");
                 paymentService.markAsCompleted(paymentId);
                 PaymentResponseDTO payment = paymentService.getPaymentById(paymentId);
-                if (payment.getBookingId() != null) {
+                
+                // Only confirm booking deposit if this is a BOOKING DEPOSIT payment
+                // (has bookingId but NO receptionId)
+                if (payment.getBookingId() != null && payment.getReceptionId() == null) {
                     bookingService.confirmBookingDeposit(payment.getBookingId());
                 }
             }

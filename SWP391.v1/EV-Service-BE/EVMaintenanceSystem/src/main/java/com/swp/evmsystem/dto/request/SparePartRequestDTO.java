@@ -37,4 +37,8 @@ public class SparePartRequestDTO {
     String supplier;
     
     String description;
+    
+    // Center ID - optional for admin (null = available for all centers)
+    // Required for staff (will be auto-set to their center)
+    Integer centerId;
 }

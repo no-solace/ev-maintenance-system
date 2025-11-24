@@ -1,12 +1,13 @@
 package com.swp.evmsystem.controller;
 
-import com.swp.evmsystem.dto.PaymentRequestDTO;
-import com.swp.evmsystem.dto.PaymentResponseDTO;
 import com.swp.evmsystem.dto.PaymentStatsDTO;
+import com.swp.evmsystem.dto.request.PaymentRequestDTO;
+import com.swp.evmsystem.dto.request.UpdateStatusRequest;
+import com.swp.evmsystem.dto.response.PaymentResponseDTO;
 import com.swp.evmsystem.enums.PaymentStatus;
 import com.swp.evmsystem.service.PaymentService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +16,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payments")
+@RequiredArgsConstructor
 public class PaymentController {
-    
-    @Autowired
-    private PaymentService paymentService;
+    final private PaymentService paymentService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
@@ -62,23 +63,16 @@ public class PaymentController {
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<List<PaymentResponseDTO>> searchPayments(@RequestParam String q) {
-        System.out.println("=== SEARCH PAYMENTS ===");
-        System.out.println("Search term: " + q);
-        
         List<PaymentResponseDTO> payments = paymentService.searchPayments(q);
-        
-        System.out.println("Found " + payments.size() + " payments");
-        System.out.println("=== END SEARCH PAYMENTS ===");
-        
         return ResponseEntity.ok(payments);
     }
-    
+
 
     @PostMapping("/{id}/mark-paid")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<?> markPaymentAsPaid(
             @PathVariable Integer id,
-            @RequestBody(required = false) java.util.Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body) {
         String paymentMethod = body != null ? body.get("paymentMethod") : "CASH";
         PaymentResponseDTO payment = paymentService.markAsPaid(id, paymentMethod);
         return ResponseEntity.ok(payment);
@@ -122,10 +116,5 @@ public class PaymentController {
     public ResponseEntity<?> createPaymentFromReception(@PathVariable Integer receptionId) {
         PaymentResponseDTO payment = paymentService.createPaymentFromReception(receptionId);
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
-    }
-
-    @lombok.Data
-    public static class UpdateStatusRequest {
-        private String status;
     }
 }

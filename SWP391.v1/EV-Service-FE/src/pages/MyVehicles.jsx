@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FiBattery, FiCalendar, FiInfo, FiTruck, FiShield, FiAlertCircle, FiCheckCircle, FiClock, FiTool } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { formatDate } from '../utils/format';
 import MultiStepBooking from '../components/booking/MultiStepBooking';
+import BookingSuccessModal from '../components/booking/BookingSuccessModal';
 import vehicleService from '../services/vehicleService';
 
 const MyVehicles = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Trạng thái mở/đóng modal đặt lịch
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -17,6 +19,33 @@ const MyVehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successBookingData, setSuccessBookingData] = useState(null);
+
+  // Check for payment success
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('paymentSuccess');
+    if (paymentSuccess === 'true') {
+      // Lấy booking data từ sessionStorage
+      const bookingDataStr = sessionStorage.getItem('paymentSuccessBooking');
+      if (bookingDataStr) {
+        try {
+          const bookingData = JSON.parse(bookingDataStr);
+          setSuccessBookingData(bookingData);
+          setShowSuccessModal(true);
+          // Xóa data và query param
+          sessionStorage.removeItem('paymentSuccessBooking');
+          // Remove query param from URL
+          searchParams.delete('paymentSuccess');
+          setSearchParams(searchParams);
+        } catch (err) {
+          console.error('Error parsing booking data:', err);
+        }
+      }
+    }
+  }, [searchParams, setSearchParams]);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -217,6 +246,19 @@ const MyVehicles = () => {
         onClose={closeBookingModal}
         vehicle={selectedVehicle} // Có thể truyền xe được chọn nếu cần
       />
+      
+      {/* Success Modal - hiển thị sau khi thanh toán thành công */}
+      {successBookingData && (
+        <BookingSuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessBookingData(null);
+          }}
+          data={successBookingData}
+          paymentCompleted={true}
+        />
+      )}
     </div>
   );
 };

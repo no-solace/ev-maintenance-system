@@ -281,7 +281,7 @@ const Dashboard = () => {
                       <tr
                         key={id}
                         className="hover:bg-blue-50/40 cursor-pointer transition"
-                        onClick={() => navigate('/app/bookings')}
+                        onClick={() => navigate('/app/my-bookings')}
                       >
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                           {vehicle}
@@ -305,7 +305,7 @@ const Dashboard = () => {
             variant="outline"
             size="sm"
             className="w-full font-semibold text-[#027C9D] hover:bg-[#80D3EF]"
-            onClick={() => navigate("/app/bookings")}
+            onClick={() => navigate("/app/my-bookings")}
           >
             Xem tất cả lịch hẹn
           </Button>

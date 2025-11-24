@@ -31,6 +31,8 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Integer>
             @Param("time") LocalTime time
     );
 
+    List<BookingEntity> findByCenter_Id(Integer centerId);
+
 
     interface BookingCountProjection {
         LocalTime getTime();
@@ -55,7 +57,7 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Integer>
 
     List<BookingEntity> findByVehicle_Id(Integer vehicleId);
 
-    List<BookingEntity> findByVehicle_Owner_Id(Integer customerId);
+    List<BookingEntity> findByVehicle_OwnerId(Integer customerId);
 
     // Count methods for statistics
     long countByStatus(BookingStatus status);
@@ -66,4 +68,8 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Integer>
 
     @Query("SELECT b FROM BookingEntity b WHERE b.bookingDate >= :startDate AND b.bookingDate <= :endDate ORDER BY b.bookingDate DESC")
     List<BookingEntity> findByBookingTimeBetween(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    // Find bookings by center ID and date (for booking slots display)
+    @Query("SELECT b FROM BookingEntity b WHERE b.center.id = :centerId AND b.bookingDate = :date AND b.status = com.swp.evmsystem.enums.BookingStatus.UPCOMING ORDER BY b.bookingTime ASC")
+    List<BookingEntity> findByCenterIdAndBookingDate(@Param("centerId") Integer centerId, @Param("date") LocalDate date);
 }

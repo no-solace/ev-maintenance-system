@@ -55,7 +55,7 @@ const BookingModal = ({ isOpen, onClose }) => {
   };
 
   if (!isOpen) return null;
-
+  // giao dien modal
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div 

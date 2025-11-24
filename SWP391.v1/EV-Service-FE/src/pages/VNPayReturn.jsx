@@ -64,30 +64,32 @@ const VNPayReturn = () => {
             });
             localStorage.setItem('bookings', JSON.stringify(existingBookings));
             
-            // Xóa pending booking
+            // Lưu booking data để hiển thị modal
+            sessionStorage.setItem('paymentSuccessBooking', pendingBooking);
             sessionStorage.removeItem('pendingBooking');
           }
 
           toast.success('Thanh toán thành công!');
           
-          // Redirect to my-bookings after 3 seconds
-          setTimeout(() => {
-            if (isAuthenticated) {
-              navigate('/app/my-bookings');
-            } else {
-              // Lưu thông báo để hiển thị sau khi login
-              sessionStorage.setItem('paymentSuccess', 'true');
-              navigate('/login', { state: { returnUrl: '/app/my-bookings' } });
-            }
-          }, 3000);
+          // Redirect về trang My Vehicles với modal success
+          if (isAuthenticated) {
+            navigate('/app/vehicles?paymentSuccess=true');
+          } else {
+            sessionStorage.setItem('paymentSuccess', 'true');
+            navigate('/login', { state: { returnUrl: '/app/vehicles?paymentSuccess=true' } });
+          }
         } else {
           setStatus('failed');
           setMessage(data.message || 'Thanh toán không thành công. Vui lòng thử lại.');
           toast.error('Thanh toán thất bại');
           
-          // Redirect về trang chủ sau 5 giây
+          // Redirect về trang lịch hẹn sau 5 giây
           setTimeout(() => {
-            navigate('/');
+            if (isAuthenticated) {
+              navigate('/app/my-bookings');
+            } else {
+              navigate('/login', { state: { returnUrl: '/app/my-bookings' } });
+            }
           }, 5000);
         }
       } catch (error) {
@@ -97,7 +99,11 @@ const VNPayReturn = () => {
         toast.error('Lỗi xác thực thanh toán');
         
         setTimeout(() => {
-          navigate('/');
+          if (isAuthenticated) {
+            navigate('/app/my-bookings');
+          } else {
+            navigate('/login', { state: { returnUrl: '/app/my-bookings' } });
+          }
         }, 5000);
       }
     };
@@ -208,10 +214,10 @@ const VNPayReturn = () => {
                 </p>
               </div>
               <button
-                onClick={() => navigate('/')}
+                onClick={() => isAuthenticated ? navigate('/app/my-bookings') : navigate('/login', { state: { returnUrl: '/app/my-bookings' } })}
                 className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Quay về trang chủ
+                Quay về trang lịch hẹn
               </button>
             </>
           )}

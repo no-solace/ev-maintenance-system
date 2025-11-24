@@ -1,25 +1,11 @@
 import api from './api';
-
-/**
- * VNPay Service
- * Handles VNPay payment integration for e-transfer
- */
-
+// dich vu vnpay 
 const vnpayService = {
-  /**
-   * Create VNPay payment URL
-   * @param {Object} paymentData - Payment information
-   * @param {number} paymentData.amount - Payment amount
-   * @param {string} paymentData.orderInfo - Order description
-   * @param {number} paymentData.paymentId - Payment ID
-   * @param {string} paymentData.invoiceNumber - Invoice number
-   * @returns {Promise}
-   */
   createPaymentUrl: async (paymentData) => {
     try {
       console.log('📤 Creating VNPay payment URL:', paymentData);
       console.log('🔗 API endpoint: /vnpay/create-payment-url');
-      
+      // Chuẩn bị dữ liệu gửi đi
       const requestBody = {
         amount: paymentData.amount,
         orderInfo: paymentData.orderInfo || `Thanh toan hoa don ${paymentData.invoiceNumber}`,
@@ -33,7 +19,7 @@ const vnpayService = {
       
       console.log('✅ VNPay response:', response);
       
-      // Handle different response formats
+      // Xử lý các định dạng phản hồi khác nhau
       if (response.success === true || response.paymentUrl) {
         return {
           success: true,
@@ -51,12 +37,12 @@ const vnpayService = {
       let errorMessage = 'Không thể tạo liên kết thanh toán VNPay';
       
       if (error.response) {
-        // Server returned an error response
+        // Server trả về phản hồi lỗi
         console.error('🔴 Server error response:', error.response.data);
         console.error('🔴 Status code:', error.response.status);
         errorMessage = error.response.data?.message || error.response.data?.error || errorMessage;
       } else if (error.request) {
-        // Request was made but no response received
+        // Request đã được gửi nhưng không nhận được phản hồi
         console.error('🔴 No response from server');
         console.error('🔴 Request:', error.request);
         errorMessage = 'Server không phản hồi. Vui lòng kiểm tra: ' +
@@ -64,7 +50,7 @@ const vnpayService = {
           '2. URL API có đúng không? (hiện tại: ' + (api.defaults?.baseURL || 'N/A') + ') ' +
           '3. Endpoint /vnpay/create-payment-url có tồn tại?';
       } else {
-        // Something else happened
+        // Có lỗi khác xảy ra
         console.error('🔴 Request setup error:', error.message);
         errorMessage = error.message || errorMessage;
       }
@@ -75,12 +61,7 @@ const vnpayService = {
       };
     }
   },
-
-  /**
-   * Handle VNPay IPN (Instant Payment Notification)
-   * @param {Object} queryParams - Query parameters from VNPay callback
-   * @returns {Promise}
-   */
+// xu ly ipn tu vnpay
   handleIPN: async (queryParams) => {
     try {
       console.log('📥 Processing VNPay IPN:', queryParams);
@@ -98,12 +79,7 @@ const vnpayService = {
       };
     }
   },
-
-  /**
-   * Handle VNPay return (when user returns from VNPay)
-   * @param {Object} queryParams - Query parameters from VNPay redirect
-   * @returns {Promise}
-   */
+// xu ly return tu vnpay
   handleReturn: async (queryParams) => {
     try {
       console.log('📥 Processing VNPay return:', queryParams);
@@ -121,13 +97,7 @@ const vnpayService = {
       };
     }
   },
-
-  /**
-   * Query transaction status from VNPay
-   * @param {string} transactionNo - VNPay transaction number
-   * @param {string} transactionDate - Transaction date (yyyyMMddHHmmss)
-   * @returns {Promise}
-   */
+// truy van giao dich vnpay
   queryTransaction: async (transactionNo, transactionDate) => {
     try {
       console.log('🔍 Querying VNPay transaction:', transactionNo);
@@ -148,12 +118,7 @@ const vnpayService = {
       };
     }
   },
-
-  /**
-   * Refund a VNPay transaction
-   * @param {Object} refundData - Refund information
-   * @returns {Promise}
-   */
+// hoan tien vnpay
   refundTransaction: async (refundData) => {
     try {
       console.log('💸 Processing VNPay refund:', refundData);

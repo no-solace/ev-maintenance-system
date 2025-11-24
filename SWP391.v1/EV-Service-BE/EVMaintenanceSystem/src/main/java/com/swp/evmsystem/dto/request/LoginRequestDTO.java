@@ -1,15 +1,14 @@
 package com.swp.evmsystem.dto.request;
 
 import com.swp.evmsystem.validation.annotation.ValidUsername;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Data
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class LoginRequestDTO {
     @ValidUsername
     private String username;

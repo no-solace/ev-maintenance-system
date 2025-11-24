@@ -11,10 +11,10 @@ const api = axios.create({
 });
 api.interceptors.request.use(
   (config) => {
-    // Try to get token from direct storage first
+    // Lay token tu localStorage
     let token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     
-    // If not found, try to get from zustand persist state
+    //  Neu khong co token trong localStorage, thu lay tu auth state
     if (!token) {
       const authState = localStorage.getItem('ev_auth_state');
       if (authState) {

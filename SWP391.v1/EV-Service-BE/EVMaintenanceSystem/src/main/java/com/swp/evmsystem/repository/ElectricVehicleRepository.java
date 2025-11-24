@@ -3,6 +3,8 @@ package com.swp.evmsystem.repository;
 import com.swp.evmsystem.entity.CustomerEntity;
 import com.swp.evmsystem.entity.ElectricVehicleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,17 +12,16 @@ import java.util.Optional;
 
 @Repository
 public interface ElectricVehicleRepository extends JpaRepository<ElectricVehicleEntity, Integer> {
-    List<ElectricVehicleEntity> findByOwner(CustomerEntity owner);
+    List<ElectricVehicleEntity> findByOwnerId(Integer ownerId);
 
     Optional<ElectricVehicleEntity> findById(Integer vehicleId);
 
     Optional<ElectricVehicleEntity> findByLicensePlate(String licensePlate);
-    
+
     Optional<ElectricVehicleEntity> findByVin(String vin);
 
-    ElectricVehicleEntity save(ElectricVehicleEntity ev);
+    @Query("SELECT c FROM CustomerEntity c WHERE c.id = :vehicleId")
+    CustomerEntity findOwnerById(@Param("vehicleId") Integer vehicleId);
 
-    boolean existsElectricVehicleEntityByIdAndOwner_Id(int id, int ownerId);
-
-    boolean getElectricVehicleEntityById(int id);
+    Boolean existsByIdAndOwnerId(Integer vehicleId, Integer ownerId);
 }

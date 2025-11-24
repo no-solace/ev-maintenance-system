@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEYS } from '../constants/config';
 import { authService } from '../services/authService';
-// call real API
+// goi api
 const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -16,7 +16,7 @@ const useAuthStore = create(
         console.log('🔑 Starting login...');
         set({ isLoading: true });
         try {
-          // Call real backend API
+          // Goi API backend thuc
           console.log('📡 Calling authService.login...');
           const response = await authService.login({
             username: credentials.email,
@@ -29,12 +29,12 @@ const useAuthStore = create(
             tokenPreview: response.token ? response.token.substring(0, 20) + '...' : null
           });
           
-          // Store token in localStorage
+          // Lưu token vào localStorage
           console.log('💾 Saving to localStorage...');
           localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.token);
           localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.user));
           
-          // Verify it was saved
+          // Xác minh đã lưu
           const savedToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
           const savedUser = localStorage.getItem(STORAGE_KEYS.USER_DATA);
           console.log('✅ Verified localStorage save:', {
@@ -42,7 +42,7 @@ const useAuthStore = create(
             userSaved: !!savedUser,
             keys: Object.keys(STORAGE_KEYS)
           });
-          
+          // Cập nhật trạng thái xác thực trong store
           set({
             user: response.user,
             token: response.token,
@@ -63,8 +63,18 @@ const useAuthStore = create(
         }
       },
       
-      logout: () => {
-        // Clear localStorage
+      logout: async () => {
+        console.log('🚪 Starting logout...');
+        try {
+          // Goi API backend de blacklist token
+          await authService.logout();
+          console.log('✅ Logout API call successful');
+        } catch (error) {
+          console.error('⚠️ Logout API call failed (continuing with local logout):', error);
+          // Tiếp tục đăng xuất cục bộ ngay cả khi gọi API thất bại
+        }
+        
+        // Xóa localStorage
         localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER_DATA);
         
@@ -73,6 +83,8 @@ const useAuthStore = create(
           token: null,
           isAuthenticated: false,
         });
+        
+        console.log('✅ Logout completed');
       },
       
       updateUser: (userData) => {
@@ -86,7 +98,7 @@ const useAuthStore = create(
         return state.isAuthenticated && state.token;
       },
       
-      // Initialize auth from localStorage if exists
+      // Khởi tạo xác thực từ localStorage nếu có
       initializeAuth: () => {
         const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);

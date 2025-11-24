@@ -1,20 +1,33 @@
-import React, { useState } from "react";
-import { FiCalendar, FiChevronRight, FiAlertCircle } from "react-icons/fi";
-import Button from "../../ui/Button";
+import React, { useState, useRef } from "react";
+import { FiCalendar, FiAlertCircle } from "react-icons/fi";
 
-const SelectDate = ({ data, onNext, onBack }) => {
-  const [selectedDate, setSelectedDate] = useState(data.date || "");
-
+const SelectDate = ({ data, onNext }) => {
   // gioi han chon ngay
   const today = new Date();
-  const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 1); // ngay mai
+  today.setHours(0, 0, 0, 0); //  dat gio ve 0h00
+  
+  const minDate = new Date(today); // cho phep chon tu hom nay
+  
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7); // 7 ngay toi
 
   const formatDate = (date) => {
-    return date.toISOString().split("T")[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
+
+  // Dat ngay mac dinh la hom nay neu chua co
+  const [selectedDate, setSelectedDate] = useState(data.date || formatDate(today));
+  const dateInputRef = useRef(null);
+
+  // Tu dong luu ngay vao parent khi thay doi
+  React.useEffect(() => {
+    if (selectedDate) {
+      onNext({ date: selectedDate });
+    }
+  }, [selectedDate, onNext]);
 
   const getDayOfWeek = (dateString) => {
     const days = [
@@ -29,109 +42,95 @@ const SelectDate = ({ data, onNext, onBack }) => {
     const date = new Date(dateString);
     return days[date.getDay()];
   };
-
-  const isWeekend = (dateString) => {
-    const date = new Date(dateString);
-    const day = date.getDay();
-    return day === 0 || day === 6; // chu nhat hoac thu 7
-  };
-
-  const handleNext = () => {
-    if (selectedDate) {
-      onNext({ date: selectedDate });
-    }
-  };
-
-  const formatDisplayDate = (dateString) => {
+  // dinh dang ngay dai
+  const formatLongDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `ngày ${day} tháng ${month} năm ${year}`;
   };
-
+  // lay thong tin xe
+  const getVehicleInfo = () => {
+    const model = data.vehicleData?.model || '';
+    const plate = data.vehicleData?.licensePlate || '';
+    if (model && plate) {
+      return `VinFast ${model} - ${plate}`;
+    } else if (model) {
+      return `VinFast ${model}`;
+    }
+    return 'xe của bạn';
+  };
+  // giao dien chon ngay
   return (
-    <div>
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Chọn ngày hẹn
-        </h3>
-        <p className="text-sm text-gray-600">
-          Chọn ngày bạn muốn mang xe đến {data.center?.name}
-        </p>
-        <div className="mt-4 p-3 bg-teal-50 rounded-lg">
-          <div className="flex items-start">
-            <FiAlertCircle className="text-teal-600 mt-0.5 mr-2" />
-            <div className="text-sm">
-              <p className="font-medium text-teal-900">Trung tâm đã chọn:</p>
-              <p className="text-teal-700">{data.center?.name}</p>
-              <p className="text-teal-600 text-xs mt-1">
-                Giờ làm việc: {data.center?.openTime} - {data.center?.closeTime}
-                ({data.center?.workingDays.join(", ")})
-              </p>
+    <div className="flex flex-col h-full">
+      <p className="text-sm text-gray-600 mb-4">
+        Chọn ngày bạn muốn mang xe đến {data.center?.name}
+      </p>
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="text-sm text-blue-800">
+          <p className="font-medium mb-2">Thông tin đặt lịch cho xe {getVehicleInfo()}</p>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-gray-600 flex-shrink-0">Trung tâm:</span>
+              <span className="font-medium text-right">{data.center?.name}</span>
+            </div>
+            <div className="flex justify-between items-center gap-4">
+              <span className="text-gray-600 flex-shrink-0">Địa chỉ:</span>
+              <span className="font-medium text-right line-clamp-1">{data.center?.address}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Body */}
+      <div className="flex-1 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Ngày hẹn <span className="text-red-500">*</span>
           </label>
           <div className="relative">
+            {/* Hidden native date input */}
             <input
+              ref={dateInputRef}
               type="date"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="sr-only"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               min={formatDate(minDate)}
               max={formatDate(maxDate)}
+              tabIndex={-1}
             />
-            <FiCalendar className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" />
+            {/* Custom clickable display */}
+            <button
+              type="button"
+              onClick={() => dateInputRef.current?.showPicker()}
+              className="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-lg bg-white hover:border-teal-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500 transition-colors text-left"
+            >
+              <span className={`text-base font-medium ${selectedDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                {selectedDate 
+                  ? `${getDayOfWeek(selectedDate)}, ${formatLongDate(selectedDate)}`
+                  : 'Chọn ngày hẹn...'}
+              </span>
+            </button>
+            <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-600 w-5 h-5 pointer-events-none" />
           </div>
-
-          {selectedDate && (
-            <div className="mt-2">
-              <p className="text-sm text-gray-600">
-                Bạn đã chọn:{" "}
-                <span className="font-medium text-gray-900">
-                  {getDayOfWeek(selectedDate)}, ngày{" "}
-                  {formatDisplayDate(selectedDate)}
-                </span>
-              </p>
-              {isWeekend(selectedDate) && (
-                <p className="text-sm text-orange-600 mt-1">
-                  <FiAlertCircle className="inline mr-1" />
-                  Cuối tuần có thể đông hơn, vui lòng đến sớm
-                </p>
-              )}
-            </div>
-          )}
         </div>
-        <div className="p-4 bg-amber-50 rounded-lg">
-          <h4 className="text-sm font-medium text-amber-900 mb-2">Lưu ý:</h4>
-          <ul className="text-sm text-amber-700 space-y-1">
-            <li>• Vui lòng đặt lịch trước 1 ngày</li>
-            <li>• Có thể đặt lịch tối đa 7 ngày từ hôm nay</li>
-            <li>
-              • Nếu cần hẹn gấp, vui lòng gọi hotline: {data.center?.phone}
-            </li>
-          </ul>
+
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="text-sm text-amber-800">
+            <p className="font-medium mb-2">Lưu ý</p>
+            <ul className="space-y-1">
+              <li>• Có thể đặt lịch từ hôm nay đến 7 ngày tới</li>
+              <li>• Đặt lịch hôm nay vui lòng chọn giờ còn trống</li>
+              <li>• Nếu cần hỗ trợ, vui lòng gọi hotline: {data.center?.phone}</li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 flex justify-end">
-        <Button
-          onClick={handleNext}
-          disabled={!selectedDate}
-          className="bg-teal-600 hover:bg-teal-700 text-white px-6"
-        >
-          Tiếp tục
-          <FiChevronRight className="ml-2" />
-        </Button>
-      </div>
+
     </div>
   );
 };

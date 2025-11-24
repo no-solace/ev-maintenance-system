@@ -2,30 +2,6 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 
-const sampleNotifications = [
-  {
-    id: 1,
-    title: "Lịch bảo dưỡng xe VinFast Evo 200 sắp tới",
-    message: "Bạn có lịch bảo dưỡng vào ngày 15/10/2025. Vui lòng chuẩn bị xe.",
-    time: "2 giờ trước",
-    status: "new",
-  },
-  {
-    id: 2,
-    title: "Sạc xe thành công",
-    message: "Xe VinFast Evo 200 Lite đã được sạc đầy vào ngày hôm qua.",
-    time: "1 ngày trước",
-    status: "read",
-  },
-  {
-    id: 3,
-    title: "Khuyến mãi 20% cho dịch vụ bảo dưỡng",
-    message: "Áp dụng đến hết tháng 10/2025, giảm giá dịch vụ bảo dưỡng cho khách hàng thân thiết.",
-    time: "3 ngày trước",
-    status: "important",
-  },
-];
-
 const statusColors = {
   new: "bg-blue-400",
   read: "bg-gray-300",
@@ -36,7 +12,7 @@ const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    setNotifications(sampleNotifications);
+    // TODO: Fetch notifications from API
   }, []);
 
   return (

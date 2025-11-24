@@ -9,14 +9,12 @@
   
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
-    overflow: hidden; /* Prevent body scrollbar */
   }
   
   #root {
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
   }
-} 
+}
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
@@ -108,4 +106,60 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Vietnamese date format for date inputs */
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #111827;
+  font-weight: 500;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Format date display as DD/MM/YYYY for Vietnamese locale */
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  display: flex;
+  flex-direction: row;
+}
+
+input[type="date"]::-webkit-datetime-edit-day-field {
+  order: 1;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field {
+  order: 2;
+}
+
+input[type="date"]::-webkit-datetime-edit-year-field {
+  order: 3;
 }

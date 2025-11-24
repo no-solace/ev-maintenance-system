@@ -19,6 +19,9 @@ public class AuthMessages {
     public static final String GENERIC_ERROR =
             "Đã xảy ra lỗi. Vui lòng thử lại.";
 
+    public static final String LOGOUT_SUCCESS =
+            "Đăng xuất thành công.";
+
     private AuthMessages() {
         // Prevent instantiation
     }

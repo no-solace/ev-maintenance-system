@@ -10,14 +10,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "lich_hen"
-        // Temporarily disabled unique constraint for testing
-        // uniqueConstraints = {@UniqueConstraint(
-        //         name = "uk_vehicle_date_time",
-        //         columnNames = {"vehicle_id", "booking_date", "booking_time"}
-        // )
-        // }
-)
+@Table(name = "lich_hen")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -28,7 +21,7 @@ public class BookingEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "booking_id")
-    int bookingId;
+    Integer bookingId;
 
     @Column(name = "customer_name", length = 100, nullable = false)
     String customerName;
@@ -43,11 +36,11 @@ public class BookingEntity {
     String customerAddress;
 
     @ManyToOne
-    @JoinColumn(name = "vehicle_id", referencedColumnName = "vehicle_id")
+    @JoinColumn(name = "vehicle_id", referencedColumnName = "vehicle_id", nullable = false)
     ElectricVehicleEntity vehicle;
 
     @ManyToOne
-    @JoinColumn(name = "center_id", referencedColumnName = "center_id")
+    @JoinColumn(name = "center_id", referencedColumnName = "center_id", nullable = false)
     ServiceCenterEntity center;
 
     @Column(name = "booking_date", nullable = false, columnDefinition = "DATE")
@@ -59,10 +52,15 @@ public class BookingEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 30, nullable = false)
     BookingStatus status;
-    
+
     @Column(name = "notes", length = 500)
     String notes;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 }

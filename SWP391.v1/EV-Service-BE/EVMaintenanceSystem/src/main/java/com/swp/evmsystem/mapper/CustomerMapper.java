@@ -12,20 +12,20 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {ElectricVehicleMapper.class})
 public interface CustomerMapper {
-    
+
     @Mapping(target = "address", source = "address", qualifiedByName = "addressToString")
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
-    @Mapping(target = "vehicles", source = "vehicle")
-    @Mapping(target = "fullName" , source = "fullName")
+    @Mapping(target = "vehicles", source = "vehicles")
+    @Mapping(target = "fullName", source = "fullName")
     CustomerDTO toDTO(CustomerEntity entity);
-    
+
     List<CustomerDTO> toDTOList(List<CustomerEntity> entities);
-    
+
     @Named("addressToString")
     default String addressToString(AddressEntity address) {
         return address != null ? address.toString() : "N/A";
     }
-    
+
     @Named("statusToString")
     default String statusToString(UserStatus status) {
         return status != null ? status.name() : "ACTIVE";

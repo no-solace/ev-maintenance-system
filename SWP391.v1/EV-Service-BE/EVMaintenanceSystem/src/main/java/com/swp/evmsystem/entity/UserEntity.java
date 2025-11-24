@@ -20,7 +20,7 @@ public abstract class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    int id;
+    Integer id;
     @Column(name = "email", length = 100, unique = true, nullable = true)
     String email;
     @Column(name = "phone", length = 10, unique = true, nullable = false)

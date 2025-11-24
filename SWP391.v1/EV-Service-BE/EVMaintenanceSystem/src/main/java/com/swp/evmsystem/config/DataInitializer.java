@@ -3,39 +3,117 @@ package com.swp.evmsystem.config;
 import com.swp.evmsystem.entity.*;
 import com.swp.evmsystem.enums.*;
 import com.swp.evmsystem.repository.*;
-import com.swp.evmsystem.service.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@AllArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    // ==================== CENTRALIZED DATA STORAGE ====================
-
     static class InitData {
-        // Employee Data
-        static final String[][] EMPLOYEES = {
-                {"Admin", "ADMIN", "0123456789", "dinhdinhchibao@gmail.com", "admin123"},
-                {"Nguyễn Ngoại Ngữ", "STAFF", "0987654321", "ddinhchibao@gmail.com", "staff123"},
-                {"Trần Văn Trọng", "TECHNICIAN", "0111222333", "zzz.dinhchibao.15@gmail.com", "tech123"},
-                {"Dương Văn Quá", "TECHNICIAN", "0999888777", "technician2@evservice.com", "tech123"},
-                {"Kim Văn Dung", "TECHNICIAN", "0888777666", "technician3@evservice.com", "tech123"}
+        // Employee Data: {FullName, Role, Phone, Email, Password, CenterId}
+        // Admin (no center)
+        static final Object[][] ADMIN = {
+                {"Admin", Role.ADMIN, "0123456789", "dinhdinhchibao@gmail.com", "admin123", null}
         };
 
-        // Customer Data
-        static final String[][] CUSTOMERS = {
-                {"Vegeta", "0905111111", "quangphap931@gmail.com", "user123"},
-                {"Songoku", "0905222222", "baodcse184280@fpt.edu.vn", "user123"}
+        // Staff for each center (2 per center)
+        static final Object[][] STAFF = {
+                // Center 1 - Quận 1
+                {"Nguyễn Văn An", Role.STAFF, "0901111001", "staff.q1.1@evservice.com", "staff123", 1},
+                {"Trần Thị Bình", Role.STAFF, "0901111002", "staff.q1.2@evservice.com", "staff123", 1},
+                // Center 2 - Quận 7
+                {"Lê Văn Cường", Role.STAFF, "0902222001", "staff.q7.1@evservice.com", "staff123", 2},
+                {"Phạm Thị Dung", Role.STAFF, "0902222002", "staff.q7.2@evservice.com", "staff123", 2},
+                // Center 3 - Thủ Đức
+                {"Hoàng Văn Em", Role.STAFF, "0903333001", "staff.td.1@evservice.com", "staff123", 3},
+                {"Võ Thị Phượng", Role.STAFF, "0903333002", "staff.td.2@evservice.com", "staff123", 3},
+                // Center 4 - Gò Vấp
+                {"Đặng Văn Giang", Role.STAFF, "0904444001", "staff.gv.1@evservice.com", "staff123", 4},
+                {"Ngô Thị Hoa", Role.STAFF, "0904444002", "staff.gv.2@evservice.com", "staff123", 4},
+                // Center 5 - Bình Thạnh
+                {"Bùi Văn Khoa", Role.STAFF, "0905555001", "staff.bt.1@evservice.com", "staff123", 5},
+                {"Đinh Thị Lan", Role.STAFF, "0905555002", "staff.bt.2@evservice.com", "staff123", 5}
+        };
+
+        // Technicians for each center (6 per center)
+        static final Object[][] TECHNICIANS = {
+                // Center 1 - Quận 1
+                {"Trần Văn Minh", Role.TECHNICIAN, "0911111001", "tech.q1.1@evservice.com", "tech123", 1},
+                {"Nguyễn Văn Nam", Role.TECHNICIAN, "0911111002", "tech.q1.2@evservice.com", "tech123", 1},
+                {"Lê Văn Ơn", Role.TECHNICIAN, "0911111003", "tech.q1.3@evservice.com", "tech123", 1},
+                {"Phạm Văn Phúc", Role.TECHNICIAN, "0911111004", "tech.q1.4@evservice.com", "tech123", 1},
+                {"Hoàng Văn Quân", Role.TECHNICIAN, "0911111005", "tech.q1.5@evservice.com", "tech123", 1},
+                {"Võ Văn Sơn", Role.TECHNICIAN, "0911111006", "tech.q1.6@evservice.com", "tech123", 1},
+                // Center 2 - Quận 7
+                {"Đặng Văn Tài", Role.TECHNICIAN, "0922222001", "tech.q7.1@evservice.com", "tech123", 2},
+                {"Ngô Văn Uy", Role.TECHNICIAN, "0922222002", "tech.q7.2@evservice.com", "tech123", 2},
+                {"Bùi Văn Vũ", Role.TECHNICIAN, "0922222003", "tech.q7.3@evservice.com", "tech123", 2},
+                {"Đinh Văn Xuân", Role.TECHNICIAN, "0922222004", "tech.q7.4@evservice.com", "tech123", 2},
+                {"Trương Văn Yên", Role.TECHNICIAN, "0922222005", "tech.q7.5@evservice.com", "tech123", 2},
+                {"Phan Văn Anh", Role.TECHNICIAN, "0922222006", "tech.q7.6@evservice.com", "tech123", 2},
+                // Center 3 - Thủ Đức
+                {"Dương Văn Bảo", Role.TECHNICIAN, "0933333001", "tech.td.1@evservice.com", "tech123", 3},
+                {"Lý Văn Cảnh", Role.TECHNICIAN, "0933333002", "tech.td.2@evservice.com", "tech123", 3},
+                {"Mai Văn Đạt", Role.TECHNICIAN, "0933333003", "tech.td.3@evservice.com", "tech123", 3},
+                {"Tô Văn Đức", Role.TECHNICIAN, "0933333004", "tech.td.4@evservice.com", "tech123", 3},
+                {"Vũ Văn Hải", Role.TECHNICIAN, "0933333005", "tech.td.5@evservice.com", "tech123", 3},
+                {"Hồ Văn Hùng", Role.TECHNICIAN, "0933333006", "tech.td.6@evservice.com", "tech123", 3},
+                // Center 4 - Gò Vấp
+                {"Cao Văn Kiên", Role.TECHNICIAN, "0944444001", "tech.gv.1@evservice.com", "tech123", 4},
+                {"Đỗ Văn Long", Role.TECHNICIAN, "0944444002", "tech.gv.2@evservice.com", "tech123", 4},
+                {"La Văn Mạnh", Role.TECHNICIAN, "0944444003", "tech.gv.3@evservice.com", "tech123", 4},
+                {"Lưu Văn Nghĩa", Role.TECHNICIAN, "0944444004", "tech.gv.4@evservice.com", "tech123", 4},
+                {"Mạc Văn Phong", Role.TECHNICIAN, "0944444005", "tech.gv.5@evservice.com", "tech123", 4},
+                {"Nghiêm Văn Quang", Role.TECHNICIAN, "0944444006", "tech.gv.6@evservice.com", "tech123", 4},
+                // Center 5 - Bình Thạnh
+                {"Ông Văn Rộng", Role.TECHNICIAN, "0955555001", "tech.bt.1@evservice.com", "tech123", 5},
+                {"Phùng Văn Sang", Role.TECHNICIAN, "0955555002", "tech.bt.2@evservice.com", "tech123", 5},
+                {"Quách Văn Thắng", Role.TECHNICIAN, "0955555003", "tech.bt.3@evservice.com", "tech123", 5},
+                {"Tạ Văn Toàn", Role.TECHNICIAN, "0955555004", "tech.bt.4@evservice.com", "tech123", 5},
+                {"Thái Văn Tuấn", Role.TECHNICIAN, "0955555005", "tech.bt.5@evservice.com", "tech123", 5},
+                {"Ứng Văn Vinh", Role.TECHNICIAN, "0955555006", "tech.bt.6@evservice.com", "tech123", 5}
+        };
+
+        // Customer Data: {FullName, Phone, Email, Password, AddressId}
+        static final Object[][] CUSTOMERS = {
+                {"Vegeta", "0905111111", "quangphap931@gmail.com", "user123", 1},
+                {"Songoku", "0905222222", "baodcse184280@fpt.edu.vn", "user123", 2},
+                {"Bulma", "0905333333", "customer3@evservice.com", "user123", 3},
+                {"Piccolo", "0905444444", "customer4@evservice.com", "user123", 4},
+                {"Gohan", "0905555555", "customer5@evservice.com", "user123", 5},
+                {"Trunks", "0905666666", "customer6@evservice.com", "user123", 1}
+        };
+
+        // Vehicle Data: {VIN, LicensePlate, Model, CustomerId, PurchaseDate, WarrantyYears}
+        // All vehicles have purchase date and warranty info (warranty may be expired but data is complete)
+        static final Object[][] VEHICLES = {
+                // Customer 1 (Vegeta) - 2 vehicles
+                {"FAKEVIN0000000001", "49MĐ685692", VehicleModel.EVO_200, 1, LocalDate.now().minusMonths(6), 2},  // Still under warranty
+                {"FAKEVIN0000000002", "59MĐ102563", VehicleModel.THEON_S, 1, LocalDate.of(2022, 9, 12), 2},      // Warranty expired
+                // Customer 2 (Songoku) - 1 vehicle
+                {"FAKEVIN0000000003", "59MĐ155567", VehicleModel.FELIZ_S, 2, LocalDate.of(2021, 5, 20), 2},      // Warranty expired
+                // Customer 3 (Bulma) - 2 vehicles
+                {"FAKEVIN0000000004", "51MĐ123456", VehicleModel.KLARA_S, 3, LocalDate.now().minusMonths(3), 2}, // Still under warranty
+                {"FAKEVIN0000000005", "51MĐ789012", VehicleModel.IMPES, 3, LocalDate.now().minusMonths(8), 2},   // Still under warranty
+                // Customer 4 (Piccolo) - 1 vehicle
+                {"FAKEVIN0000000006", "52MĐ345678", VehicleModel.LUDO, 4, LocalDate.of(2020, 11, 15), 2},        // Warranty expired
+                // Customer 5 (Gohan) - 1 vehicle
+                {"FAKEVIN0000000007", "53MĐ901234", VehicleModel.VENTO_S, 5, LocalDate.now().minusMonths(10), 2}, // Still under warranty
+                // Customer 6 (Trunks) - 3 vehicles
+                {"FAKEVIN0000000008", "49MĐ111222", VehicleModel.EVO_200, 6, LocalDate.now().minusMonths(4), 2},  // Still under warranty
+                {"FAKEVIN0000000009", "49MĐ333444", VehicleModel.KLARA_S, 6, LocalDate.now().minusMonths(12), 2}, // Still under warranty
+                {"FAKEVIN0000000010", "49MĐ555666", VehicleModel.FELIZ_S, 6, LocalDate.of(2021, 8, 20), 2}       // Warranty expired
         };
 
         // Location Data
@@ -57,52 +135,23 @@ public class DataInitializer implements CommandLineRunner {
         static final LocalTime END_TIME = LocalTime.parse("18:00");
         static final int MAX_CAPACITY = 3;
 
-        // EV Model Data
-        static final String[] MODEL_NAMES = {
-                "Klara S (3.5 kWh)", "Feliz S (3.5 kWh)", "Vento S (3.5 kWh)",
-                "Theon S (3.5 kWh)", "Evo 200 (2.5 kWh)", "Evo 200 Lite (2.5 kWh)",
-                "Impes (2.0 kWh)", "Ludo (1.8 kWh)", "Klara A2 (2.5 kWh)"
+        // Geographic coordinates for each service center (matching order)
+        // Format: {latitude, longitude}
+        static final double[][] CENTER_COORDINATES = {
+                {10.7769, 106.7009},  // Quận 1 - Nguyễn Huệ area
+                {10.7340, 106.7220},  // Quận 7 - Nguyễn Văn Linh
+                {10.8507, 106.7720},  // Thủ Đức - Võ Văn Ngân
+                {10.8162, 106.6870},  // Gò Vấp - Phan Văn Trị
+                {10.8013, 106.7104}   // Bình Thạnh - Xô Viết Nghệ Tĩnh
         };
 
-        // Vehicle Data
-        static final String[] VINS = {"FAKEVIN0000000000", "TESTVIN0000000000", "PLACEHOLDER000000"};
-        static final String[] LICENSE_PLATES = {"49MĐ685692", "59MĐ102563", "59MĐ155567"};
-
-        // Offer Type Data
-        static final String[][] OFFER_TYPES = {
-                {"Bảo dưỡng định kỳ", "Bảo dưỡng toàn diện xe máy điện theo tiêu chuẩn VinFast"},
-                {"Thay thế phụ tùng", "Thay thế phụ tùng chính hãng VinFast"},
-                {"Sửa chữa", "Sửa chữa các vấn đề kỹ thuật"}
-        };
 
         // Maintenance Package Data
         static final Object[][] MAINTENANCE_PACKAGES = {
-                {"Gói cơ bản", 150000, 30, "Bảo dưỡng cơ bản cho xe máy điện",
-                        "Kiểm tra hệ thống điện|Kiểm tra phanh|Kiểm tra lốp và áp suất|Kiểm tra đèn và còi|Vệ sinh xe cơ bản"},
-                {"Gói nâng cao", 350000, 45, "Bảo dưỡng toàn diện cho xe máy điện",
-                        "Tất cả dịch vụ gói cơ bản|Kiểm tra chi tiết pin|Kiểm tra động cơ điện|Kiểm tra hệ thống làm mát|Thay dầu phanh (nếu cần)|Cân chỉnh bánh xe|Vệ sinh xe chuyên sâu|Kiểm tra phần mềm và cập nhật"}
-        };
+                {OfferType.MAINTENANCE, PackageLevel.LEVEL_1, "Gói bảo dưỡng cấp 1", "Gói bảo dưỡng mỗi 1000km", 200000, 30},
+                {OfferType.MAINTENANCE, PackageLevel.LEVEL_2, "Gói bảo dưỡng cấp 2", "Gói bảo dưỡng mỗi 5000km", 250000, 40},
+                {OfferType.MAINTENANCE, PackageLevel.LEVEL_3, "Gói bảo dưỡng cấp 3", "Gói bảo dưỡng mỗi 10000km", 300000, 50}
 
-        // Issue Data for Repair
-        static final String[][] REPAIR_ISSUES = {
-                {"Xe không khởi động được", "Xe không phản hồi khi bật nút nguồn"},
-                {"Pin sạc không vào", "Cắm sạc nhưng không tăng dung lượng"},
-                {"Phanh không ăn", "Hiệu quả phanh kém hoặc mất phanh"},
-                {"Đèn không sáng", "Đèn pha/đèn hậu không hoạt động"},
-                {"Còi không kêu", "Còi không phát ra âm thanh"},
-                {"Xe chạy yếu", "Gia tốc chậm, công suất giảm"},
-                {"Tiếng kêu lạ khi vận hành", "Âm thanh bất thường từ động cơ hoặc truyền động"},
-                {"Khác", "Vấn đề khác"}
-        };
-
-        // Issue Data for Part Replacement
-        static final String[] REPLACEMENT_ISSUES = {
-                "Thay má phanh", "Thay lốp", "Thay đèn", "Thay còi"
-        };
-
-        // Issue Data for Maintenance
-        static final String[] MAINTENANCE_ISSUES = {
-                "Bảo dưỡng định kỳ 3.000km", "Bảo dưỡng tổng quát"
         };
 
         // Spare Parts Data
@@ -112,18 +161,15 @@ public class DataInitializer implements CommandLineRunner {
                 {"Battery Management System", "BP-002", PartCategory.BATTERY, 8, 3, 1200000, 1000000, true, "VinFast Electronics", "BMS for battery protection"},
                 {"Battery Charger Port", "BP-003", PartCategory.BATTERY, 25, 10, 150000, 120000, true, "VinFast Parts", "Standard charging port"},
                 {"Battery Temperature Sensor", "BP-004", PartCategory.BATTERY, 3, 10, 180000, 140000, true, "VinFast Electronics", "Temperature sensor"},
-
                 // Motor Parts
                 {"BLDC Hub Motor 1500W", "MT-001", PartCategory.MOTOR, 6, 2, 5500000, 4800000, true, "Motor Tech Vietnam", "Brushless DC hub motor"},
                 {"Motor Controller", "MT-002", PartCategory.MOTOR, 10, 5, 850000, 700000, true, "Motor Tech Vietnam", "Electronic speed controller"},
                 {"Motor Bearing Set", "MT-003", PartCategory.MOTOR, 20, 10, 180000, 150000, true, "Industrial Parts Co", "High precision bearings"},
                 {"Starter Motor", "MT-004", PartCategory.MOTOR, 2, 5, 1800000, 1500000, true, "Motor Tech Vietnam", "Electric starter motor"},
-
                 // Charger Parts
                 {"Fast Charger 48V 5A", "CH-001", PartCategory.CHARGER, 12, 8, 890000, 750000, true, "VinFast Electronics", "Smart fast charger"},
                 {"Charging Cable 3m", "CH-002", PartCategory.CHARGER, 30, 15, 120000, 90000, true, "Cable Solutions", "Heavy duty cable"},
                 {"Charger Adapter", "CH-003", PartCategory.CHARGER, 18, 10, 85000, 65000, true, "VinFast Electronics", "Universal adapter"},
-
                 // Brake Parts
                 {"Disc Brake Pads Front", "BR-001", PartCategory.BRAKE, 45, 20, 180000, 140000, true, "Brake Masters", "Ceramic brake pads"},
                 {"Disc Brake Pads Rear", "BR-002", PartCategory.BRAKE, 38, 20, 160000, 120000, true, "Brake Masters", "Ceramic rear pads"},
@@ -131,28 +177,23 @@ public class DataInitializer implements CommandLineRunner {
                 {"Brake Cable Set", "BR-004", PartCategory.BRAKE, 35, 15, 95000, 70000, true, "Cable Solutions", "Complete cable kit"},
                 {"Hydraulic Brake Fluid", "BR-005", PartCategory.BRAKE, 50, 20, 65000, 45000, true, "Brake Masters", "DOT 4 brake fluid 250ml"},
                 {"Brake Lever Left", "BR-006", PartCategory.BRAKE, 5, 10, 150000, 120000, true, "Brake Masters", "Left brake lever"},
-
                 // Tire Parts
                 {"Front Tire 90/90-12", "TR-001", PartCategory.TIRE, 28, 15, 450000, 380000, true, "Tire Masters", "Tubeless front tire"},
                 {"Rear Tire 100/90-12", "TR-002", PartCategory.TIRE, 25, 15, 480000, 400000, true, "Tire Masters", "Tubeless rear tire"},
                 {"Inner Tube 12 inch", "TR-003", PartCategory.TIRE, 40, 20, 85000, 65000, true, "Tire Masters", "Heavy duty inner tube"},
                 {"Tire Valve Cap Set", "TR-004", PartCategory.TIRE, 100, 30, 15000, 10000, true, "General Parts", "Aluminum valve caps 4pcs"},
-
                 // Light Parts
                 {"LED Headlight Assembly", "LT-001", PartCategory.LIGHT, 18, 8, 650000, 520000, true, "LED Solutions", "High brightness LED"},
                 {"Tail Light LED", "LT-002", PartCategory.LIGHT, 25, 10, 280000, 220000, true, "LED Solutions", "LED tail light"},
                 {"Turn Signal Light Pair", "LT-003", PartCategory.LIGHT, 30, 12, 180000, 140000, true, "LED Solutions", "LED turn signals"},
                 {"Light Bulb H4 LED", "LT-004", PartCategory.LIGHT, 50, 25, 120000, 90000, true, "LED Solutions", "Replacement LED bulb"},
-
                 // Mirror Parts
                 {"Rearview Mirror Left", "MR-001", PartCategory.MIRROR, 20, 10, 195000, 150000, true, "Mirror Co", "Left side mirror"},
                 {"Rearview Mirror Right", "MR-002", PartCategory.MIRROR, 18, 10, 195000, 150000, true, "Mirror Co", "Right side mirror"},
                 {"Mirror Glass Replacement", "MR-003", PartCategory.MIRROR, 35, 15, 65000, 45000, true, "Mirror Co", "Mirror glass only"},
-
                 // Horn Parts
                 {"Electric Horn 12V", "HR-001", PartCategory.HORN, 40, 20, 85000, 65000, true, "Horn Factory", "Loud electric horn 110dB"},
                 {"Horn Button", "HR-002", PartCategory.HORN, 45, 20, 35000, 25000, true, "General Parts", "Horn button switch"},
-
                 // Electrical Parts
                 {"Wiring Harness Complete", "EL-001", PartCategory.ELECTRICAL, 8, 5, 1200000, 950000, true, "Electrical Systems", "Complete wiring kit"},
                 {"Fuse Box Assembly", "EL-002", PartCategory.ELECTRICAL, 15, 8, 280000, 220000, true, "Electrical Systems", "Fuse box with fuses"},
@@ -163,7 +204,6 @@ public class DataInitializer implements CommandLineRunner {
                 {"Speed Sensor", "EL-007", PartCategory.ELECTRICAL, 30, 15, 150000, 120000, true, "VinFast Electronics", "Magnetic speed sensor"},
                 {"Side Stand Switch", "EL-008", PartCategory.ELECTRICAL, 4, 10, 95000, 75000, true, "VinFast Parts", "Safety side stand switch"},
                 {"USB Charging Port", "EL-009", PartCategory.ELECTRICAL, 0, 10, 220000, 180000, false, "VinFast Electronics", "USB port 5V 2A"},
-
                 // Other Parts
                 {"Seat Cushion", "OT-001", PartCategory.OTHER, 15, 8, 450000, 350000, true, "Comfort Seats", "Waterproof seat cushion"},
                 {"Handlebar Grip Pair", "OT-002", PartCategory.OTHER, 50, 20, 95000, 70000, true, "General Parts", "Rubber handlebar grips"},
@@ -176,24 +216,53 @@ public class DataInitializer implements CommandLineRunner {
                 {"Tool Kit Complete", "OT-009", PartCategory.OTHER, 12, 5, 280000, 220000, true, "Tool Master", "Complete maintenance kit"},
                 {"Windshield Screen", "OT-010", PartCategory.OTHER, 0, 5, 650000, 520000, false, "General Parts", "Transparent windshield"}
         };
+
+        // Inspection Tasks: {Category, Description, KmInterval}
+        static final Object[][] INSPECTION_TASKS = {
+                // BATTERY - Pin & Hệ thống điện
+                {InspectionCategory.BATTERY, "Kiểm tra mức pin & dung lượng", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.BATTERY, "Kiểm tra cổng sạc, dây sạc", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.BATTERY, "Kiểm tra ECU / đèn lỗi cơ bản", KmInterval.FIVE_THOUSAND},
+                {InspectionCategory.BATTERY, "Kiểm tra pin chi tiết, hiệu suất", KmInterval.TEN_THOUSAND},
+                // MOTOR - Động cơ & truyền động
+                {InspectionCategory.MOTOR, "Kiểm tra động cơ, rung ồn cơ bản", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.MOTOR, "Kiểm tra dây curoa / truyền động", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.MOTOR, "Kiểm tra phanh động cơ / bôi trơn dây curoa", KmInterval.FIVE_THOUSAND},
+                {InspectionCategory.MOTOR, "Kiểm tra chi tiết động cơ, nhiệt độ, thay dây curoa nếu cần", KmInterval.TEN_THOUSAND},
+                // BRAKE_SUSPENSION - Phanh & Hệ thống treo
+                {InspectionCategory.BRAKE_SUSPENSION, "Kiểm tra phanh cơ bản, tay phanh", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.BRAKE_SUSPENSION, "Kiểm tra dầu phanh, hệ thống treo", KmInterval.FIVE_THOUSAND},
+                {InspectionCategory.BRAKE_SUSPENSION, "Thay má phanh, dầu giảm xóc, kiểm tra giảm xóc tổng thể", KmInterval.TEN_THOUSAND},
+                // WHEELS_TIRES - Bánh xe & lốp
+                {InspectionCategory.WHEELS_TIRES, "Kiểm tra áp suất lốp", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.WHEELS_TIRES, "Kiểm tra độ mòn gai lốp", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.WHEELS_TIRES, "Kiểm tra vành, nan hoa", KmInterval.FIVE_THOUSAND},
+                {InspectionCategory.WHEELS_TIRES, "Kiểm tra cân bằng bánh, thay lốp nếu mòn", KmInterval.TEN_THOUSAND},
+                // FRAME_BODY - Khung & thân xe
+                {InspectionCategory.FRAME_BODY, "Kiểm tra thân xe, ốc vít, gương, đèn", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.FRAME_BODY, "Kiểm tra khung, bảo vệ sườn", KmInterval.FIVE_THOUSAND},
+                {InspectionCategory.FRAME_BODY, "Kiểm tra chi tiết khung, trầy xước nghiêm trọng", KmInterval.TEN_THOUSAND},
+                // CONTROLS_SAFETY - Hệ thống điều khiển & an toàn
+                {InspectionCategory.CONTROLS_SAFETY, "Kiểm tra tay ga, tay phanh, tay côn", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.CONTROLS_SAFETY, "Kiểm tra bảng đồng hồ, nút điều khiển, cảnh báo lỗi", KmInterval.ONE_THOUSAND},
+                {InspectionCategory.CONTROLS_SAFETY, "Kiểm tra ABS (nếu có)", KmInterval.FIVE_THOUSAND},
+                {InspectionCategory.CONTROLS_SAFETY, "Kiểm tra tổng thể hệ thống điều khiển & an toàn", KmInterval.TEN_THOUSAND}
+        };
     }
 
-    // ==================== REPOSITORY DEPENDENCIES ====================
-
-    @Autowired UserRepository userRepository;
-    @Autowired ElectricVehicleRepository electricVehicleRepository;
-    @Autowired ServiceCenterRepository serviceCenterRepository;
-    @Autowired ProvinceRepository provinceRepository;
-    @Autowired DistrictRepository districtRepository;
-    @Autowired WardRepository wardRepository;
-    @Autowired AddressRepository addressRepository;
-    @Autowired EvModelRepository evModelRepository;
-    @Autowired OfferTypeRepository offerTypeRepository;
-    @Autowired MaintenancePackageRepository maintenancePackageRepository;
-    @Autowired IssueRepository issueRepository;
-    @Autowired SparePartRepository sparePartRepository;
-
-    // ==================== MAIN RUNNER ====================
+    UserRepository userRepository;
+    ElectricVehicleRepository electricVehicleRepository;
+    CenterRepository centerRepository;
+    ProvinceRepository provinceRepository;
+    DistrictRepository districtRepository;
+    WardRepository wardRepository;
+    AddressRepository addressRepository;
+    MaintenancePackageRepository maintenancePackageRepository;
+    SparePartRepository sparePartRepository;
+    InspectionTaskRepository inspectionTaskRepository;
+    CustomerRepository customerRepository;
+    BookingRepository bookingRepository;
+    PaymentRepository paymentRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -201,44 +270,72 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        AddressEntity[] customerAddresses = initializeLocationData();
-        CustomerEntity[] customers = initializeCustomers(customerAddresses);
-        List<EvModelEntity> models = initializeEvModels();
-        initializeElectricVehicles(models, customers);
-        OfferTypeEntity maintenanceOfferType = initializeOfferTypes();
-        initializeMaintenancePackages(maintenanceOfferType);
-        initializeIssues();
+        initializeAddressAndCenter();
+        initializeEmployees();
+        initializeCustomers();
+        initializeElectricVehicles();
+        initializeMaintenancePackages();
         initializeSpareParts();
-        initializeUsers();
+        initializeInspectionTasks();
+        initializeSampleBookings(); // Add sample bookings for dashboard
     }
 
-    // ==================== INITIALIZATION METHODS ====================
-
-    private void initializeUsers() {
+    void initializeEmployees() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-        for (String[] data : InitData.EMPLOYEES) {
-            UserEntity employee = EmployeeEntity.builder()
-                    .fullName(data[0])
-                    .role(Role.valueOf(data[1]))
-                    .phone(data[2])
-                    .email(data[3])
-                    .password(encoder.encode(data[4]))
+        // Create Admin
+        for (Object[] data : InitData.ADMIN) {
+            EmployeeEntity admin = EmployeeEntity.builder()
+                    .fullName((String) data[0])
+                    .role((Role) data[1])
+                    .phone((String) data[2])
+                    .email((String) data[3])
+                    .password(encoder.encode((String) data[4]))
                     .status(UserStatus.ACTIVE)
-                    .center(serviceCenterRepository.findById(1).orElse(null))
+                    .center(null) // Admin has no center
                     .workingStatus(WorkingStatus.AVAILABLE)
                     .build();
-            userRepository.save(employee);
+            userRepository.save(admin);
+        }
+
+        // Create Staff for each center
+        for (Object[] data : InitData.STAFF) {
+            Integer centerId = (Integer) data[5];
+            EmployeeEntity staff = EmployeeEntity.builder()
+                    .fullName((String) data[0])
+                    .role((Role) data[1])
+                    .phone((String) data[2])
+                    .email((String) data[3])
+                    .password(encoder.encode((String) data[4]))
+                    .status(UserStatus.ACTIVE)
+                    .center(centerRepository.findById(centerId).orElse(null))
+                    .workingStatus(WorkingStatus.AVAILABLE)
+                    .build();
+            userRepository.save(staff);
+        }
+
+        // Create Technicians for each center
+        for (Object[] data : InitData.TECHNICIANS) {
+            Integer centerId = (Integer) data[5];
+            EmployeeEntity technician = EmployeeEntity.builder()
+                    .fullName((String) data[0])
+                    .role((Role) data[1])
+                    .phone((String) data[2])
+                    .email((String) data[3])
+                    .password(encoder.encode((String) data[4]))
+                    .status(UserStatus.ACTIVE)
+                    .center(centerRepository.findById(centerId).orElse(null))
+                    .workingStatus(WorkingStatus.AVAILABLE)
+                    .build();
+            userRepository.save(technician);
         }
     }
 
-    private AddressEntity[] initializeLocationData() {
+    void initializeAddressAndCenter() {
         ProvinceEntity province = ProvinceEntity.builder()
                 .provinceName(InitData.PROVINCE)
                 .build();
         provinceRepository.save(province);
-
-        AddressEntity[] customerAddresses = new AddressEntity[2];
 
         for (int i = 0; i < InitData.DISTRICTS.length; i++) {
             DistrictEntity district = DistrictEntity.builder()
@@ -256,12 +353,10 @@ public class DataInitializer implements CommandLineRunner {
             AddressEntity address = AddressEntity.builder()
                     .addressLine(InitData.ADDRESS_LINES[i])
                     .ward(ward)
+                    .latitude(InitData.CENTER_COORDINATES[i][0])  // Set latitude
+                    .longitude(InitData.CENTER_COORDINATES[i][1]) // Set longitude
                     .build();
             addressRepository.save(address);
-
-            if (i < 2) {
-                customerAddresses[i] = address;
-            }
 
             ServiceCenterEntity serviceCenter = ServiceCenterEntity.builder()
                     .centerName(InitData.CENTER_NAMES[i])
@@ -271,200 +366,222 @@ public class DataInitializer implements CommandLineRunner {
                     .endTime(InitData.END_TIME)
                     .maxCapacity(InitData.MAX_CAPACITY)
                     .build();
-            serviceCenterRepository.save(serviceCenter);
+            centerRepository.save(serviceCenter);
         }
-
-        return customerAddresses;
     }
 
-    private CustomerEntity[] initializeCustomers(AddressEntity[] addresses) {
+    private void initializeCustomers() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        CustomerEntity[] customers = new CustomerEntity[InitData.CUSTOMERS.length];
 
-        for (int i = 0; i < InitData.CUSTOMERS.length; i++) {
-            String[] data = InitData.CUSTOMERS[i];
+        for (Object[] data : InitData.CUSTOMERS) {
+            Integer addressId = (Integer) data[4];
             UserEntity customer = CustomerEntity.builder()
-                    .fullName(data[0])
+                    .fullName((String) data[0])
                     .role(Role.CUSTOMER)
-                    .phone(data[1])
-                    .email(data[2])
-                    .password(encoder.encode(data[3]))
+                    .phone((String) data[1])
+                    .email((String) data[2])
+                    .password(encoder.encode((String) data[3]))
                     .status(UserStatus.ACTIVE)
-                    .address(addresses[i])
+                    .address(addressRepository.findById(addressId).orElse(null))
                     .build();
             userRepository.save(customer);
-            customers[i] = (CustomerEntity) customer;
         }
-
-        return customers;
     }
 
-    private List<EvModelEntity> initializeEvModels() {
-        List<EvModelEntity> models = new ArrayList<>();
+    void initializeElectricVehicles() {
+        // Calculate customer ID offset (1 admin + 10 staff + 30 technicians = 41)
+        int customerIdOffset = 41;
 
-        for (String name : InitData.MODEL_NAMES) {
-            EvModelEntity model = EvModelEntity.builder()
-                    .modelName(name)
-                    .manufacturer("VinFast")
+        for (Object[] data : InitData.VEHICLES) {
+            String vin = (String) data[0];
+            String licensePlate = (String) data[1];
+            VehicleModel model = (VehicleModel) data[2];
+            Integer customerIndex = (Integer) data[3]; // 1-based index in CUSTOMERS array
+            LocalDate purchaseDate = (LocalDate) data[4];
+            Integer warrantyYears = (Integer) data[5];
+            Integer customerId = customerIdOffset + customerIndex;
+            LocalDate warrantyEnd = purchaseDate.plusYears(warrantyYears);
+            boolean isWarrantyValid = LocalDate.now().isBefore(warrantyEnd) || LocalDate.now().isEqual(warrantyEnd);
+
+            // All vehicles have complete warranty information
+            ElectricVehicleEntity vehicle = ElectricVehicleEntity.builder()
+                    .vin(vin)
+                    .licensePlate(licensePlate)
+                    .model(model)
+                    .owner(customerRepository.findById(customerId).orElse(null))
+                    .maintenanceStatus(EvMaintenanceStatus.AVAILABLE)
+                    .hasWarranty(isWarrantyValid)
+                    .purchaseDate(purchaseDate)
+                    .warrantyStartDate(purchaseDate)
+                    .warrantyEndDate(warrantyEnd)
+                    .warrantyYears(warrantyYears)
                     .build();
-            models.add(evModelRepository.save(model));
+
+            electricVehicleRepository.save(vehicle);
         }
-
-        return models;
     }
 
-    private void initializeElectricVehicles(List<EvModelEntity> models, CustomerEntity[] customers) {
-        if (models.isEmpty()) return;
-
-        // Customer 1 - Vehicle 1 (With Warranty)
-        LocalDate purchaseDate1 = LocalDate.now().minusMonths(6);
-        LocalDate warrantyEnd1 = purchaseDate1.plusYears(2);
-
-        ElectricVehicleEntity vehicle1 = ElectricVehicleEntity.builder()
-                .vin(InitData.VINS[0])
-                .licensePlate(InitData.LICENSE_PLATES[0])
-                .model(models.get(4))
-                .owner(customers[0])
-                .maintenanceStatus(EvMaintenanceStatus.AVAILABLE)
-                .hasWarranty(LocalDate.now().isBefore(warrantyEnd1) || LocalDate.now().isEqual(warrantyEnd1))
-                .purchaseDate(purchaseDate1)
-                .warrantyStartDate(purchaseDate1)
-                .warrantyEndDate(warrantyEnd1)
-                .warrantyYears(2)
-                .build();
-        electricVehicleRepository.save(vehicle1);
-
-        // Customer 1 - Vehicle 2 (Warranty Expired)
-        LocalDate purchaseDate2 = LocalDate.of(2022, 9, 12);
-        LocalDate warrantyEnd2 = purchaseDate2.plusYears(2);
-
-        ElectricVehicleEntity vehicle2 = ElectricVehicleEntity.builder()
-                .vin(InitData.VINS[1])
-                .licensePlate(InitData.LICENSE_PLATES[1])
-                .model(models.get(5))
-                .owner(customers[0])
-                .maintenanceStatus(EvMaintenanceStatus.AVAILABLE)
-                .hasWarranty(LocalDate.now().isBefore(warrantyEnd2) || LocalDate.now().isEqual(warrantyEnd2))
-                .purchaseDate(purchaseDate2)
-                .warrantyStartDate(purchaseDate2)
-                .warrantyEndDate(warrantyEnd2)
-                .warrantyYears(2)
-                .build();
-        electricVehicleRepository.save(vehicle2);
-
-        // Customer 2 - Vehicle (No Warranty)
-        ElectricVehicleEntity vehicle3 = ElectricVehicleEntity.builder()
-                .vin(InitData.VINS[2])
-                .licensePlate(InitData.LICENSE_PLATES[2])
-                .model(models.get(2))
-                .owner(customers[1])
-                .maintenanceStatus(EvMaintenanceStatus.AVAILABLE)
-                .hasWarranty(false)
-                .build();
-        electricVehicleRepository.save(vehicle3);
-    }
-
-    private OfferTypeEntity initializeOfferTypes() {
-        OfferTypeEntity maintenanceOfferType = null;
-
-        for (int i = 0; i < InitData.OFFER_TYPES.length; i++) {
-            String[] data = InitData.OFFER_TYPES[i];
-            OfferTypeEntity offerType = OfferTypeEntity.builder()
-                    .offerTypeName(data[0])
-                    .offerTypeDescription(data[1])
-                    .build();
-            offerType = offerTypeRepository.save(offerType);
-
-            if (i == 0) {
-                maintenanceOfferType = offerType;
-            }
-        }
-
-        return maintenanceOfferType;
-    }
-
-    private void initializeMaintenancePackages(OfferTypeEntity maintenanceOfferType) {
-        if (maintenanceOfferType == null) return;
+    void initializeMaintenancePackages() {
 
         for (Object[] data : InitData.MAINTENANCE_PACKAGES) {
             MaintenancePackageEntity packageEntity = MaintenancePackageEntity.builder()
-                    .packageName((String) data[0])
-                    .price((Integer) data[1])
-                    .durationMinutes((Integer) data[2])
+                    .offerType((OfferType) data[0])
+                    .level((PackageLevel) data[1])
+                    .packageName((String) data[2])
                     .description((String) data[3])
-                    .includes((String) data[4])
-                    .offerType(maintenanceOfferType)
+                    .price((Integer) data[4])
+                    .durationMinutes((Integer) data[5])
                     .build();
             maintenancePackageRepository.save(packageEntity);
         }
     }
 
-    private void initializeIssues() {
-        List<OfferTypeEntity> offerTypes = offerTypeRepository.findAll();
-
-        OfferTypeEntity maintenance = offerTypes.stream()
-                .filter(o -> o.getOfferTypeName().equals("Bảo dưỡng định kỳ"))
-                .findFirst().orElse(null);
-
-        OfferTypeEntity replacement = offerTypes.stream()
-                .filter(o -> o.getOfferTypeName().equals("Thay thế phụ tùng"))
-                .findFirst().orElse(null);
-
-        OfferTypeEntity repair = offerTypes.stream()
-                .filter(o -> o.getOfferTypeName().equals("Sửa chữa"))
-                .findFirst().orElse(null);
-
-        // Repair Issues
-        if (repair != null) {
-            for (String[] data : InitData.REPAIR_ISSUES) {
-                IssueEntity issue = IssueEntity.builder()
-                        .issueName(data[0])
-                        .description(data[1])
-                        .offerType(repair)
-                        .build();
-                issueRepository.save(issue);
-            }
-        }
-
-        // Replacement Issues
-        if (replacement != null) {
-            for (String name : InitData.REPLACEMENT_ISSUES) {
-                IssueEntity issue = IssueEntity.builder()
-                        .issueName(name)
-                        .offerType(replacement)
-                        .build();
-                issueRepository.save(issue);
-            }
-        }
-
-        // Maintenance Issues
-        if (maintenance != null) {
-            for (String name : InitData.MAINTENANCE_ISSUES) {
-                IssueEntity issue = IssueEntity.builder()
-                        .issueName(name)
-                        .offerType(maintenance)
-                        .build();
-                issueRepository.save(issue);
-            }
-        }
-    }
-
-    private void initializeSpareParts() {
+    void initializeSpareParts() {
         for (Object[] data : InitData.SPARE_PARTS) {
             SparePartEntity sparePart = SparePartEntity.builder()
                     .sparePartName((String) data[0])
                     .partNumber((String) data[1])
                     .category((PartCategory) data[2])
-                    .center(serviceCenterRepository.findById(1).orElse(null))
+                    .center(centerRepository.findById(1).orElse(null))
                     .quantity((Integer) data[3])
                     .minimumStock((Integer) data[4])
                     .price((Integer) data[5])
                     .unitCost((Integer) data[6])
+                    .status(SparePartStatus.ACTIVE)
                     .inStock((Boolean) data[7])
                     .supplier((String) data[8])
+                    .offerType(OfferType.REPLACEMENT)
                     .description((String) data[9])
                     .build();
             sparePartRepository.save(sparePart);
         }
+    }
+
+    void initializeInspectionTasks() {
+        for (Object[] data : InitData.INSPECTION_TASKS) {
+            InspectionTaskEntity task = InspectionTaskEntity.builder()
+                    .category((InspectionCategory) data[0])
+                    .description((String) data[1])
+                    .kmInterval((KmInterval) data[2])
+                    .build();
+            inspectionTaskRepository.save(task);
+        }
+    }
+
+    void initializeSampleBookings() {
+        Random random = new Random();
+        int totalInserted = 0;
+
+        // Loop through 5 centers, 50 bookings per center (250 total)
+        for (int centerLoop = 1; centerLoop <= 5; centerLoop++) {
+            ServiceCenterEntity center = centerRepository.findById(centerLoop).orElse(null);
+            if (center == null) continue;
+
+            // 50 bookings per center: 10 of each service type (5 types)
+            for (int serviceLoop = 1; serviceLoop <= 50; serviceLoop++) {
+                int vehicleId = ((serviceLoop - 1) % 10) + 1;
+                ElectricVehicleEntity vehicle = electricVehicleRepository.findById(vehicleId).orElse(null);
+                if (vehicle == null) continue;
+
+                // Random date in November 2025
+                LocalDate bookingDate = LocalDate.of(2025, 11, 1).plusDays(random.nextInt(30));
+                LocalTime bookingTime = LocalTime.of(8 + random.nextInt(10), 0);
+
+                String serviceName;
+                String serviceDescription;
+                long totalAmount;
+                PaymentMethod paymentMethod;
+                String vehicleModel;
+                String notes;
+
+                // Determine service type: 10 bookings per type (5 types × 10 = 50)
+                // Type 1-10: Maintenance Level 3
+                // Type 11-20: Maintenance Level 2
+                // Type 21-30: Battery Pack
+                // Type 31-40: Battery Management System
+                // Type 41-50: Temperature Sensor
+                if (serviceLoop <= 10) {
+                    serviceName = "Bảo dưỡng cấp 3";
+                    serviceDescription = "Gói bảo dưỡng mỗi 10000km";
+                    totalAmount = 300000;
+                    paymentMethod = PaymentMethod.VNPAY;
+                    vehicleModel = "VinFast Evo 200";
+                    notes = "Bảo dưỡng cấp 3 - 10000km";
+                } else if (serviceLoop <= 20) {
+                    serviceName = "Bảo dưỡng cấp 2";
+                    serviceDescription = "Gói bảo dưỡng mỗi 5000km";
+                    totalAmount = 250000;
+                    paymentMethod = PaymentMethod.VNPAY;
+                    vehicleModel = "VinFast Theon S";
+                    notes = "Bảo dưỡng cấp 2 - 5000km";
+                } else if (serviceLoop <= 30) {
+                    serviceName = "Thay thế phụ tùng";
+                    serviceDescription = "Battery Pack 48V 20Ah";
+                    totalAmount = 3500000;
+                    paymentMethod = PaymentMethod.VNPAY;
+                    vehicleModel = "VinFast Feliz S";
+                    notes = "Thay thế Battery Pack 48V 20Ah";
+                } else if (serviceLoop <= 40) {
+                    serviceName = "Thay thế phụ tùng";
+                    serviceDescription = "Battery Management System";
+                    totalAmount = 1200000;
+                    paymentMethod = PaymentMethod.CASH;
+                    vehicleModel = "VinFast Klara S";
+                    notes = "Thay thế Battery Management System";
+                } else {
+                    serviceName = "Thay thế phụ tùng";
+                    serviceDescription = "Battery Temperature Sensor";
+                    totalAmount = 180000;
+                    paymentMethod = PaymentMethod.CASH;
+                    vehicleModel = "VinFast Ludo";
+                    notes = "Thay thế Battery Temperature Sensor";
+                }
+                
+                // Create and save booking entity
+                BookingEntity booking = BookingEntity.builder()
+                        .customerName("Khách hàng " + totalInserted)
+                        .customerPhone(String.format("090%07d", 1000000 + totalInserted))
+                        .customerEmail("customer" + totalInserted + "@test.com")
+                        .vehicle(vehicle)
+                        .center(center)
+                        .bookingDate(bookingDate)
+                        .bookingTime(bookingTime)
+                        .status(BookingStatus.COMPLETED)
+                        .notes(notes)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                BookingEntity savedBooking = bookingRepository.save(booking);
+
+                // Create and save payment entity
+                String licensePlate = String.format("%dMD%05d", 49 + (serviceLoop % 5), totalInserted);
+                LocalDateTime paymentDate = LocalDateTime.of(bookingDate, bookingTime).plusHours(2);
+
+                PaymentEntity payment = PaymentEntity.builder()
+                        .booking(savedBooking)
+                        .invoiceNumber(String.format("INV%06d", totalInserted))
+                        .customerName(savedBooking.getCustomerName())
+                        .customerPhone(savedBooking.getCustomerPhone())
+                        .customerEmail(savedBooking.getCustomerEmail())
+                        .vehicleInfo(vehicleModel)
+                        .licensePlate(licensePlate)
+                        .serviceName(serviceName)
+                        .serviceDescription(serviceDescription)
+                        .totalAmount((double) totalAmount)
+                        .discountAmount(0.0)
+                        .finalAmount((double) totalAmount)
+                        .paymentStatus(PaymentStatus.COMPLETED)
+                        .paymentMethod(paymentMethod)
+                        .paymentDate(paymentDate)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+
+                paymentRepository.save(payment);
+                totalInserted++;
+            }
+        }
+
+        System.out.println("✅ Successfully initialized " + totalInserted + " sample bookings and payments!");
     }
 }

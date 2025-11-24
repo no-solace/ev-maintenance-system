@@ -31,4 +31,17 @@ public interface EmployeeService {
      * @return Technician details
      */
     EmployeeResponseDTO getTechnicianById(Integer id);
+    
+    /**
+     * Get all employees (all roles: ADMIN, STAFF, TECHNICIAN)
+     * @return List of all employees
+     */
+    List<EmployeeResponseDTO> getAllEmployees();
+    
+    /**
+     * Get employee by ID (any role)
+     * @param id Employee ID
+     * @return Employee details
+     */
+    EmployeeResponseDTO getEmployeeById(Integer id);
 }

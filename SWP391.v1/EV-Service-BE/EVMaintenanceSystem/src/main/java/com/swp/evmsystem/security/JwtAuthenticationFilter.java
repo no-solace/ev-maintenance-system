@@ -36,8 +36,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.info("Request URI: {}", request.getRequestURI());
         
         final String authHeader = request.getHeader("Authorization");
-        log.info("Authorization Header: {}", authHeader != null ? authHeader : "NULL");
-        
         final String jwt;
         final String userEmail;
 
@@ -80,8 +78,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
             log.error("Failed to process JWT token: {}", ex.getMessage(), ex);
         }
-        
-        log.info("===================================================\n");
         filterChain.doFilter(request, response);
     }
 

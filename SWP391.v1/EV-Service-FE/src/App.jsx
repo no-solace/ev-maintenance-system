@@ -28,9 +28,8 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminEnhancedAnalytics from './pages/admin/AdminEnhancedAnalytics';
-import AdminInventory from './pages/admin/AdminInventory';
 import AdminUsers from './pages/admin/AdminUsers';
-import AdminSettings from './pages/admin/AdminSettings';
+import AdminSpareParts from './pages/admin/AdminSpareParts';
 
 // Staff 
 import StaffLayout from './layouts/StaffLayout';
@@ -50,6 +49,9 @@ import TechnicianLayout from './layouts/TechnicianLayout';
 import TechnicianDashboard from './pages/technician/TechnicianDashboard';
 import TechnicianWorkOrders from './pages/technician/TechnicianWorkOrders';
 import TechnicianVehicleInspection from './pages/technician/TechnicianVehicleInspection';
+import TechnicianWorkHistory from './pages/technician/TechnicianWorkHistory';
+import TechnicianInspectionChecklist from './pages/technician/TechnicianInspectionChecklist';
+import TechnicianWorkDetail from './pages/technician/TechnicianWorkDetail';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -189,9 +191,8 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="enhanced-analytics" element={<AdminEnhancedAnalytics />} />
-          <Route path="inventory" element={<AdminInventory />} />
+          <Route path="spare-parts" element={<AdminSpareParts />} />
           <Route path="users" element={<AdminUsers />} />
-          <Route path="settings" element={<AdminSettings />} />
         </Route>
         
         <Route
@@ -227,10 +228,12 @@ function App() {
           <Route path="dashboard" element={<TechnicianDashboard />} />
           <Route path="work-orders" element={<TechnicianWorkOrders />} />
           <Route path="work-orders/:id" element={<TechnicianWorkOrders />} />
+          <Route path="work-detail/:receptionId" element={<TechnicianWorkDetail />} />
           <Route path="inspection/:bookingId" element={<TechnicianVehicleInspection />} />
           <Route path="inspection/reception/:receptionId" element={<TechnicianVehicleInspection />} />
+          <Route path="checklist/:receptionId" element={<TechnicianInspectionChecklist />} />
+          <Route path="history" element={<TechnicianWorkHistory />} />
           <Route path="inventory" element={<div>Inventory Page</div>} />
-          <Route path="history" element={<div>Service History Page</div>} />
           <Route path="resources" element={<div>Tools & Manuals Page</div>} />
         </Route>
         

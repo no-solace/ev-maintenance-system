@@ -19,4 +19,5 @@ public class ElectricVehicleDTO {
     LocalDate purchaseDate;
     Boolean hasWarranty;
     String maintenanceStatus;
+    OwnerDTO owner;
 }

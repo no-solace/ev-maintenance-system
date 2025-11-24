@@ -1,70 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiDollarSign, FiTool, FiUsers, FiBarChart2,
   FiTrendingUp, FiDownload, FiCalendar, FiFilter,
-  FiPieChart, FiActivity, FiTarget, FiClock
+  FiPieChart, FiActivity, FiTarget, FiClock, FiArrowUp, FiArrowDown
 } from 'react-icons/fi';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import adminService from '../../services/adminService';
+import toast from 'react-hot-toast';
 
 const AdminAnalytics = () => {
-  const [timeRange, setTimeRange] = useState('6months');
+  const [timeRange, setTimeRange] = useState('6MONTHS');
   const [selectedMetric, setSelectedMetric] = useState('revenue');
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState(null);
 
-  // fake data
-  const analyticsData = {
-    revenue: {
-      total: 0,
-      change: 15.3,
-      previousPeriod: 0
-    },
-    services: {
-      total: 0,
-      change: 8.7,
-      previousPeriod: 0
-    },
-    customers: {
-      active: 0,
-      change: 12.1,
-      previousPeriod: 0
-    },
-    avgServiceValue: {
-      value: 0,
-      change: -2.4,
-      previousPeriod: 0
+  useEffect(() => {
+    fetchAnalytics();
+  }, [timeRange]);
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      const result = await adminService.getAnalyticsByTimeRange(timeRange);
+      
+      if (result.success && result.data) {
+        setAnalyticsData(result.data);
+      } else {
+        toast.error(result.error || 'Không thể tải dữ liệu phân tích');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching analytics:', error);
+      toast.error('Có lỗi xảy ra khi tải dữ liệu');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // fake date chart data
-  const revenueData = [
-    { month: 'Apr', value: 100 },
-    { month: 'May', value: 150 },
-    { month: 'Jun', value: 200 },
-    { month: 'Jul', value:  250 },
-    { month: 'Aug', value: 300 },
-    { month: 'Sep', value: 350 }
-  ];
+  // Get data from API or default values
+  const overview = analyticsData?.overview || {};
+  const revenueTrends = analyticsData?.revenueTrends || [];
+  const serviceTrends = analyticsData?.serviceTrends || [];
+  const servicePerformance = analyticsData?.servicePerformance || {};
 
-  // cong suat dich vu
-  const serviceMetrics = {
-    completionRate: 0,
-    avgJobsPerCustomer: 0,
-    satisfaction: 4.8,
-    onTimeCompletion: 94.2,
-    firstTimeFixRate: 87.5
-  };
+  // Current metric data for charts
+  const chartData = selectedMetric === 'revenue' ? revenueTrends : serviceTrends;
 
-  // Loai dich vu
-  const serviceTypeData = [
-    { name: 'Battery Service', value: 35, count: 0 },
-    { name: 'Software Update', value: 25, count: 0 },
-    { name: 'General Maintenance', value: 20, count: 0 },
-    { name: 'Charging System', value: 12, count: 0 },
-    { name: 'Diagnostics', value: 8, count: 0 }
-  ];
+  // Loại dịch vụ từ API
+  const serviceTypeData = (analyticsData?.serviceTypeDistribution || []).map((s, idx) => ({
+    name: s.name,
+    value: s.percentage,
+    count: s.count,
+    color: s.color
+  }));
 
-  // Thong tin khach hang
-  const customerData = {
+  // Thông tin khách hàng từ API
+  const customerData = analyticsData?.customerInsights || {
     totalCustomers: 0,
     repeatCustomers: 0,
     retentionRate: 0,
@@ -72,44 +63,71 @@ const AdminAnalytics = () => {
     avgServicePerCustomer: 0
   };
 
-  // Dich vu hang dau
-  const topServices = [
-    { name: 'Battery Replacement', revenue: 0, count: 0 },
-    { name: 'Software Update', revenue: 0, count: 0 },
-    { name: 'AC System Service', revenue: 0, count: 0 },
-    { name: 'Tire Rotation', revenue: 0, count: 0 },
-    { name: 'Brake Service', revenue: 0, count: 0 }
-  ];
+  // Dịch vụ hàng đầu từ API
+  const topServices = analyticsData?.topPerformingServices || [];
 
-  const getMaxRevenue = () => {
-    return Math.max(...revenueData.map(d => d.value), 100);
+  const getMaxValue = () => {
+    if (chartData.length === 0) return 100;
+    return Math.max(...chartData.map(d => d.value), 100);
+  };
+
+  const formatCurrency = (value) => {
+    if (!value) return '0';
+    // Format in millions if > 1M, otherwise thousands
+    if (value >= 1000000) {
+      const millions = Math.round(value / 100000) / 10; // 1 decimal
+      return `${millions}M`;
+    }
+    const thousands = Math.round(value / 1000);
+    return `${thousands}k`;
+  };
+
+  const formatNumber = (value) => {
+    if (!value) return '0';
+    return value.toLocaleString();
+  };
+
+  const getTrendIcon = (change) => {
+    if (!change) return null;
+    return change >= 0 ? <FiArrowUp className="text-green-500" /> : <FiArrowDown className="text-red-500" />;
+  };
+
+  const getTrendColor = (change) => {
+    if (!change) return 'text-gray-500';
+    return change >= 0 ? 'text-green-500' : 'text-red-500';
   };
 
   return (
     <div>
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-          <p className="text-gray-600 mt-1">Comprehensive business intelligence and reporting</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select 
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="30days">Last 30 Days</option>
-            <option value="3months">Last 3 Months</option>
-            <option value="6months">Last 6 Months</option>
-            <option value="1year">Last Year</option>
-          </select>
-          <Button 
-            variant="outline"
-            icon={<FiDownload />}
-          >
-            Export Report
-          </Button>
-        </div>
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-gray-900">Phân tích dữ liệu</h1>
+        <p className="text-gray-600 mt-1">Báo cáo và phân tích kinh doanh toàn diện</p>
+      </div>
+
+      <div className="mb-6 flex items-center gap-3">
+        <select 
+          value={timeRange}
+          onChange={(e) => setTimeRange(e.target.value)}
+          disabled={loading}
+          className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+        >
+          <option value="30DAYS">30 ngày qua</option>
+          <option value="3MONTHS">3 tháng qua</option>
+          <option value="6MONTHS">6 tháng qua</option>
+          <option value="1YEAR">1 năm qua</option>
+        </select>
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-500">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-teal-600"></div>
+            <span className="text-sm">Đang tải...</span>
+          </div>
+        )}
+        <Button 
+          variant="outline"
+          icon={<FiDownload />}
+        >
+          Xuất báo cáo
+        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card>
@@ -118,10 +136,14 @@ const AdminAnalytics = () => {
               <span className="text-sm text-gray-600">Total Revenue</span>
               <FiDollarSign className="text-green-600 text-xl" />
             </div>
-            <p className="text-3xl font-bold text-gray-900">${analyticsData.revenue.total}</p>
+            <p className="text-3xl font-bold text-gray-900">
+              {loading ? '...' : `${Math.round((overview.totalRevenue || 0) / 1000000 * 10) / 10} triệu VNĐ`}
+            </p>
             <div className="flex items-center gap-2 mt-2">
-              <FiTrendingUp className="text-green-500 text-sm" />
-              <span className="text-sm text-green-500">+{analyticsData.revenue.change}%</span>
+              {getTrendIcon(overview.revenueChangePercent)}
+              <span className={`text-sm ${getTrendColor(overview.revenueChangePercent)}`}>
+                {overview.revenueChangePercent >= 0 ? '+' : ''}{overview.revenueChangePercent?.toFixed(1) || 0}%
+              </span>
               <span className="text-sm text-gray-500">vs prev period</span>
             </div>
           </Card.Content>
@@ -133,10 +155,14 @@ const AdminAnalytics = () => {
               <span className="text-sm text-gray-600">Total Services</span>
               <FiTool className="text-blue-600 text-xl" />
             </div>
-            <p className="text-3xl font-bold text-gray-900">{analyticsData.services.total}</p>
+            <p className="text-3xl font-bold text-gray-900">
+              {loading ? '...' : formatNumber(overview.totalServices || 0)}
+            </p>
             <div className="flex items-center gap-2 mt-2">
-              <FiTrendingUp className="text-green-500 text-sm" />
-              <span className="text-sm text-green-500">+{analyticsData.services.change}%</span>
+              {getTrendIcon(overview.servicesChangePercent)}
+              <span className={`text-sm ${getTrendColor(overview.servicesChangePercent)}`}>
+                {overview.servicesChangePercent >= 0 ? '+' : ''}{overview.servicesChangePercent?.toFixed(1) || 0}%
+              </span>
               <span className="text-sm text-gray-500">vs prev period</span>
             </div>
           </Card.Content>
@@ -148,10 +174,14 @@ const AdminAnalytics = () => {
               <span className="text-sm text-gray-600">Active Customers</span>
               <FiUsers className="text-teal-600 text-xl" />
             </div>
-            <p className="text-3xl font-bold text-gray-900">{analyticsData.customers.active}</p>
+            <p className="text-3xl font-bold text-gray-900">
+              {loading ? '...' : formatNumber(overview.activeCustomers)}
+            </p>
             <div className="flex items-center gap-2 mt-2">
-              <FiTrendingUp className="text-green-500 text-sm" />
-              <span className="text-sm text-green-500">+{analyticsData.customers.change}%</span>
+              {getTrendIcon(overview.customersChangePercent)}
+              <span className={`text-sm ${getTrendColor(overview.customersChangePercent)}`}>
+                {overview.customersChangePercent >= 0 ? '+' : ''}{overview.customersChangePercent?.toFixed(1) || 0}%
+              </span>
               <span className="text-sm text-gray-500">vs prev period</span>
             </div>
           </Card.Content>
@@ -163,10 +193,14 @@ const AdminAnalytics = () => {
               <span className="text-sm text-gray-600">Avg Service Value</span>
               <FiBarChart2 className="text-yellow-600 text-xl" />
             </div>
-            <p className="text-3xl font-bold text-gray-900">${analyticsData.avgServiceValue.value}</p>
+            <p className="text-3xl font-bold text-gray-900">
+              {loading ? '...' : `${Math.round((overview.avgServiceValue || 0) / 1000)}k VNĐ`}
+            </p>
             <div className="flex items-center gap-2 mt-2">
-              <FiTrendingUp className="text-red-500 text-sm rotate-180" />
-              <span className="text-sm text-red-500">{analyticsData.avgServiceValue.change}%</span>
+              {getTrendIcon(overview.avgValueChangePercent)}
+              <span className={`text-sm ${getTrendColor(overview.avgValueChangePercent)}`}>
+                {overview.avgValueChangePercent >= 0 ? '+' : ''}{overview.avgValueChangePercent?.toFixed(1) || 0}%
+              </span>
               <span className="text-sm text-gray-500">vs prev period</span>
             </div>
           </Card.Content>
@@ -206,24 +240,52 @@ const AdminAnalytics = () => {
               </div>
             </Card.Header>
             <Card.Content className="p-6">
-              <div className="h-64 flex items-end justify-between gap-2">
-                {revenueData.map((item, index) => (
-                  <div key={index} className="flex-1 flex flex-col items-center">
-                    <div 
-                      className="w-full bg-gradient-to-t from-green-500 to-teal-400 rounded-t-lg transition-all duration-500 hover:opacity-80"
-                      style={{ 
-                        height: `${(item.value / getMaxRevenue()) * 100}%`,
-                        minHeight: '4px'
-                      }}
-                    />
-                    <p className="text-xs text-gray-600 mt-2">{item.month}</p>
-                    <p className="text-xs font-medium text-gray-900">${item.value}</p>
-                  </div>
-                ))}
-              </div>
+              {loading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                </div>
+              ) : chartData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center">
+                  <p className="text-gray-500">Không có dữ liệu</p>
+                </div>
+              ) : (
+                <div className="h-64 flex items-end justify-between gap-2 px-2">
+                  {chartData.map((item, index) => {
+                    const heightPercent = getMaxValue() > 0 ? (item.value / getMaxValue()) * 100 : 0;
+                    return (
+                      <div key={index} className="flex-1 flex flex-col items-center group">
+                        <div className="relative w-full flex flex-col items-center">
+                          {/* Tooltip on hover */}
+                          <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                            {selectedMetric === 'revenue' 
+                              ? `${(item.value / 1000000).toFixed(1)}M VNĐ` 
+                              : `${item.value} dịch vụ`}
+                          </div>
+                          {/* Bar */}
+                          <div 
+                            className={`w-full rounded-t-lg transition-all duration-500 hover:opacity-80 cursor-pointer ${
+                              selectedMetric === 'revenue' 
+                                ? 'bg-gradient-to-t from-green-500 to-teal-400'
+                                : 'bg-gradient-to-t from-blue-500 to-indigo-400'
+                            }`}
+                            style={{ 
+                              height: `${Math.max(heightPercent, 2)}%`,
+                              minHeight: item.value > 0 ? '8px' : '2px'
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2 font-medium">{item.label || item.period}</p>
+                        <p className="text-xs font-semibold text-gray-900">
+                          {selectedMetric === 'revenue' ? formatCurrency(item.value) : item.value}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600">
-                  Revenue Chart - Showing {timeRange === '6months' ? '6 months' : timeRange} of data
+                  {selectedMetric === 'revenue' ? 'Revenue' : 'Services'} Chart - Showing {timeRange.replace('MONTHS', ' months').replace('DAYS', ' days').replace('YEAR', ' year').toLowerCase()} of data
                 </p>
               </div>
             </Card.Content>
@@ -238,43 +300,51 @@ const AdminAnalytics = () => {
           </Card.Header>
           <Card.Content className="p-6">
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">Completion Rate</span>
-                  <span className="text-sm font-medium">{serviceMetrics.completionRate}%</span>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: `${serviceMetrics.completionRate}%` }} />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600">Completion Rate</span>
+                      <span className="text-sm font-medium">{servicePerformance.completionRate?.toFixed(1) || 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${servicePerformance.completionRate || 0}%` }} />
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-600">Avg Jobs/Customer</span>
-                  <span className="text-sm font-medium">{serviceMetrics.avgJobsPerCustomer}</span>
-                </div>
-              </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600">Avg Jobs/Customer</span>
+                      <span className="text-sm font-medium">{servicePerformance.avgJobsPerCustomer?.toFixed(1) || 0}</span>
+                    </div>
+                  </div>
 
-              <div className="pt-3 border-t border-gray-200">
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-600">Customer Satisfaction</span>
-                  <span className="text-sm font-medium bg-green-100 text-green-700 px-2 py-1 rounded">
-                    {serviceMetrics.satisfaction}/5.0
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-600">On-time Completion</span>
-                  <span className="text-sm font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                    {serviceMetrics.onTimeCompletion}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-600">First-time Fix Rate</span>
-                  <span className="text-sm font-medium bg-teal-100 text-teal-700 px-2 py-1 rounded">
-                    {serviceMetrics.firstTimeFixRate}%
-                  </span>
-                </div>
-              </div>
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">Customer Satisfaction</span>
+                      <span className="text-sm font-medium bg-green-100 text-green-700 px-2 py-1 rounded">
+                        {servicePerformance.customerSatisfaction?.toFixed(1) || 0}/5.0
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">On-time Completion</span>
+                      <span className="text-sm font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                        {servicePerformance.onTimeCompletion?.toFixed(1) || 0}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">First-time Fix Rate</span>
+                      <span className="text-sm font-medium bg-teal-100 text-teal-700 px-2 py-1 rounded">
+                        {servicePerformance.firstTimeFixRate?.toFixed(1) || 0}%
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </Card.Content>
         </Card>
@@ -306,10 +376,10 @@ const AdminAnalytics = () => {
                         className="h-2 rounded-full transition-all duration-500"
                         style={{ 
                           width: `${service.value}%`,
-                          backgroundColor: index === 0 ? '#10b981' : 
+                          backgroundColor: service.color || (index === 0 ? '#10b981' : 
                                          index === 1 ? '#3b82f6' : 
                                          index === 2 ? '#f59e0b' : 
-                                         index === 3 ? '#8b5cf6' : '#ef4444'
+                                         index === 3 ? '#8b5cf6' : '#ef4444')
                         }}
                       />
                     </div>
@@ -377,10 +447,12 @@ const AdminAnalytics = () => {
                 {topServices.map((service, index) => (
                   <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm text-gray-900">{service.name}</td>
-                    <td className="py-3 px-4 text-sm text-gray-900 text-right">${service.revenue}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900 text-right">
+                      {service.revenue?.toLocaleString?.() || service.revenue} VNĐ
+                    </td>
                     <td className="py-3 px-4 text-sm text-gray-900 text-right">{service.count}</td>
                     <td className="py-3 px-4 text-sm text-gray-900 text-right">
-                      ${service.count > 0 ? (service.revenue / service.count).toFixed(2) : '0'}
+                      {service.count > 0 ? Math.round(service.revenue / service.count).toLocaleString() : '0'} VNĐ
                     </td>
                   </tr>
                 ))}

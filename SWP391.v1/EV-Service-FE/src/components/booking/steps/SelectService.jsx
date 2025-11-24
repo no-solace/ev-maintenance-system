@@ -5,7 +5,7 @@ import Button from '../../ui/Button';
 import api from '../../../services/api';
 import { issueService } from '../../../services/issueService';
 import { sparePartService } from '../../../services/sparePartService';
-
+ // const chon dich vu 
 const SelectService = ({ data, onNext, onBack }) => {
   const [selectedService, setSelectedService] = useState(data.service || null);
   const [selectedPackage, setSelectedPackage] = useState(data.servicePackage || null);
@@ -25,21 +25,21 @@ const SelectService = ({ data, onNext, onBack }) => {
   const [selectedVehicleDetails, setSelectedVehicleDetails] = useState(null);
   const [vehicleBookingHistory, setVehicleBookingHistory] = useState([]);
   
-  // Map service IDs to offer type IDs from backend
+  //  map offer type ids
   const OFFER_TYPE_IDS = {
     'maintenance': 1, // Bảo dưỡng định kỳ
     'parts': 2,       // Thay thế phụ tùng
     'repair': 3       // Sửa chữa
   };
 
-  // Initialize selectedVehicle only if data.vehicle is a valid number
+  // Khoi tao selectedVehicle chi khi data.vehicle la so hop le
   useEffect(() => {
     if (data.vehicle && !isNaN(parseInt(data.vehicle))) {
       setSelectedVehicle(data.vehicle);
     }
   }, [data.vehicle]);
 
-  // Fetch customer's vehicles from backend
+  //  fetch danh sach xe cua khach hang
   useEffect(() => {
     const fetchMyVehicles = async () => {
       try {
@@ -48,13 +48,11 @@ const SelectService = ({ data, onNext, onBack }) => {
         const response = await api.get('/me/vehicles');
         console.log('✅ My Vehicles Response:', response);
         
-        // Response should be array of vehicles
+        //  kiem tra va chuyen doi du lieu
         const vehicles = Array.isArray(response) ? response : (response.data || response);
         console.log('🎯 Customer vehicles:', vehicles);
-        
-        // Transform backend response to match frontend expectations
-        // Backend: { id, model, licensePlate, vin, hasWarranty, warrantyEndDate }
-        // Frontend: { vehicleId, modelName, licensePlate, hasWarranty, warrantyEndDate }
+       // Chuyen doi du lieu ve dinh dang frontend can
+       // Backend: { id, model, licensePlate, vin, hasWarranty, warrantyEndDate }
         const transformedVehicles = vehicles.map(v => ({
           vehicleId: v.id,
           modelName: v.model,
@@ -63,14 +61,14 @@ const SelectService = ({ data, onNext, onBack }) => {
           hasWarranty: v.hasWarranty,
           warrantyEndDate: v.warrantyEndDate
         }));
-        
+        // Frontend: { vehicleId, modelName, licensePlate, vin, hasWarranty, warrantyEndDate }
         console.log('✅ Transformed vehicles:', transformedVehicles);
-        
+        // Luu vao state
         setMyVehicles(transformedVehicles);
       } catch (error) {
         console.error('❌ Error fetching customer vehicles:', error);
         console.error('Error details:', error.response);
-        // Fallback to empty array if API fails
+        //  set empty array on error
         setMyVehicles([]);
       } finally {
         setLoadingVehicles(false);
@@ -80,15 +78,15 @@ const SelectService = ({ data, onNext, onBack }) => {
     fetchMyVehicles();
   }, []);
   
-  // Fetch selected vehicle details and booking history
+  // fetch data lich su dat lich cua xe khi chon xe
   useEffect(() => {
     const fetchVehicleData = async () => {
       if (selectedVehicle && myVehicles.length > 0) {
-        // Get vehicle details from myVehicles
+        // Lay thong tin xe tu myVehicles
         const vehicleDetails = myVehicles.find(v => String(v.vehicleId) === String(selectedVehicle));
         setSelectedVehicleDetails(vehicleDetails);
         
-        // Fetch booking history for this vehicle
+        //  fetch lich su dat lich cua xe
         try {
           const history = await api.get(`/bookings/vehicle/${selectedVehicle}`);
           setVehicleBookingHistory(Array.isArray(history) ? history : []);
@@ -103,14 +101,14 @@ const SelectService = ({ data, onNext, onBack }) => {
     fetchVehicleData();
   }, [selectedVehicle, myVehicles]);
   
-  // Fetch maintenance packages when maintenance service is selected
+  //  fetch goi bao duong khi chon dich vu bao duong
   useEffect(() => {
     const fetchMaintenancePackages = async () => {
       if (selectedService?.id === 'maintenance') {
         try {
           setLoadingPackages(true);
           const packages = await api.get('/maintenance-packages');
-          // Transform backend data to match frontend structure
+          // Chuyen doi du lieu backend ve dinh dang frontend
           const transformedPackages = packages.map(pkg => ({
             id: pkg.packageId,
             name: pkg.packageName,
@@ -131,7 +129,7 @@ const SelectService = ({ data, onNext, onBack }) => {
     fetchMaintenancePackages();
   }, [selectedService]);
   
-  // Fetch repair issues when repair service is selected
+  //  fetch cac van de sua chua khi chon dich vu sua chua
   useEffect(() => {
     const fetchRepairIssues = async () => {
       if (selectedService?.id === 'repair') {
@@ -140,12 +138,12 @@ const SelectService = ({ data, onNext, onBack }) => {
           const offerTypeId = OFFER_TYPE_IDS[selectedService.id];
           const issues = await issueService.getIssuesByOfferType(offerTypeId);
           console.log('✅ Fetched repair issues:', issues);
-          // Transform to simple string array for compatibility
+          // Chuyen doi ve mang chuoi don gian de tuong thich
           const issueNames = issues.map(issue => issue.issueName);
           setRepairIssues(issueNames);
         } catch (error) {
           console.error('❌ Error fetching repair issues:', error);
-          // Fallback to hardcoded issues if API fails
+          //  fallback de hardcore data neu API loi
           setRepairIssues(serviceDetails.repair.commonIssues);
         } finally {
           setLoadingIssues(false);
@@ -156,7 +154,7 @@ const SelectService = ({ data, onNext, onBack }) => {
     fetchRepairIssues();
   }, [selectedService]);
   
-  // Fetch spare parts when parts service is selected
+  //  fetch cac phu tung khi chon dich vu phu tung
   useEffect(() => {
     const fetchSpareParts = async () => {
       if (selectedService?.id === 'parts') {
@@ -164,7 +162,7 @@ const SelectService = ({ data, onNext, onBack }) => {
           setLoadingParts(true);
           const parts = await sparePartService.getAllSpareParts();
           console.log('\u2705 Fetched spare parts:', parts);
-          // Transform backend data to match frontend structure
+          // Chuyen doi du lieu backend ve dinh dang frontend
           // Backend: { partId, partName, unitPrice, status, stockQuantity, category, description }
           // Frontend: { id, name, price, inStock }
           const transformedParts = parts.map(part => ({
@@ -178,7 +176,7 @@ const SelectService = ({ data, onNext, onBack }) => {
           setApiSpareParts(transformedParts);
         } catch (error) {
           console.error('❌ Error fetching spare parts:', error);
-          // Fallback to hardcoded parts if API fails
+          //  fallback de hardcore data neu API loi
           setApiSpareParts(serviceDetails.parts.commonParts);
         } finally {
           setLoadingParts(false);
@@ -188,20 +186,20 @@ const SelectService = ({ data, onNext, onBack }) => {
     
     fetchSpareParts();
   }, [selectedService]);
-
+  // danh sach loai dich vu
   const services = [
     { ...serviceDetails.maintenance, icon: <FiTool /> },
     { ...serviceDetails.parts, icon: <FiPackage /> },
     { ...serviceDetails.repair, icon: <FiSettings /> }
   ];
-
+  // xu ly chon dich vu
   const handleServiceSelect = (service) => {
     setSelectedService(service);
     setSelectedPackage(null);
     setSelectedParts([]);
     setProblemDescription('');
   };
-
+  // xu ly chon phu tung
   const handlePartToggle = (part) => {
     if (selectedParts.find(p => p.id === part.id)) {
       setSelectedParts(selectedParts.filter(p => p.id !== part.id));
@@ -209,7 +207,7 @@ const SelectService = ({ data, onNext, onBack }) => {
       setSelectedParts([...selectedParts, part]);
     }
   };
-
+  // xu ly chon xe
   const handleVehicleChange = (e) => {
     const vehicleId = e.target.value;
     console.log('🚗 Vehicle selected:', vehicleId, 'Type:', typeof vehicleId);
@@ -218,7 +216,7 @@ const SelectService = ({ data, onNext, onBack }) => {
     setSelectedVehicle(vehicleId);
   };
   
-  // Check if vehicle warranty is active
+ // kiem tra xe con trong thoi gian bao hanh
   const isVehicleWarrantyActive = (vehicleDetails) => {
     if (!vehicleDetails || !vehicleDetails.hasWarranty || !vehicleDetails.warrantyEndDate) {
       return false;
@@ -228,7 +226,7 @@ const SelectService = ({ data, onNext, onBack }) => {
     let endDate;
     const dateStr = vehicleDetails.warrantyEndDate;
     
-    // Parse date from backend (dd-MM-yyyy or ISO format)
+    // Phan tich ngay tu backend (dd-MM-yyyy hoac dinh dang ISO)
     if (dateStr.includes('-') && dateStr.split('-')[0].length === 2) {
       const [day, month, year] = dateStr.split('-');
       endDate = new Date(`${year}-${month}-${day}`);
@@ -239,7 +237,7 @@ const SelectService = ({ data, onNext, onBack }) => {
     return endDate >= today;
   };
   
-  // Check if vehicle has used basic package
+  // kiem tra xe da su dung goi co ban
   const hasUsedBasicPackage = () => {
     return vehicleBookingHistory.some(booking => 
       booking.maintenancePackage === 'G\u00f3i c\u01a1 b\u1ea3n' &&
@@ -247,13 +245,13 @@ const SelectService = ({ data, onNext, onBack }) => {
     );
   };
   
-  // Check if package should be disabled
+  // kiem tra goi co nen bi vo hieu hoa hay khong 
   const isPackageDisabled = (pkg) => {
-    // Disable basic package if vehicle has active warranty
+    //  Neu goi la co ban va xe da su dung goi co ban thi vo hieu hoa
     if (pkg.name === 'G\u00f3i c\u01a1 b\u1ea3n') {
       const hasWarranty = isVehicleWarrantyActive(selectedVehicleDetails);
       console.log('\ud83d\udd12 Basic package check:', { hasWarranty, vehicleDetails: selectedVehicleDetails });
-      return hasWarranty; // Disable if warranty is active
+      return hasWarranty; //  vo hieu hoa neu con bao hanh
     }
     return false;
   };
@@ -261,7 +259,7 @@ const SelectService = ({ data, onNext, onBack }) => {
   const handleNext = () => {
     const serviceData = {
       service: selectedService,
-      vehicle: selectedVehicle // This should be the vehicleId (number)
+      vehicle: selectedVehicle 
     };
 
     console.log('📤 Passing vehicle to next step:', selectedVehicle, 'Type:', typeof selectedVehicle);
@@ -272,11 +270,12 @@ const SelectService = ({ data, onNext, onBack }) => {
       serviceData.parts = selectedParts;
     } else if (selectedService?.id === 'repair') {
       serviceData.problemDescription = problemDescription;
-      serviceData.selectedIssue = selectedIssue; // Save selected issue
+      serviceData.selectedIssue = selectedIssue; 
     }
 
     onNext(serviceData);
   };
+  // kiem tra co the tiep tuc khong
 
   const canProceed = () => {
     if (!selectedService || !selectedVehicle) return false;
@@ -290,13 +289,13 @@ const SelectService = ({ data, onNext, onBack }) => {
     }
     return false;
   };
-
+  // lọc phụ tùng theo tìm kiếm
   const filteredParts = selectedService?.id === 'parts' 
     ? apiSpareParts.filter(part => 
         part.name?.toLowerCase().includes(partsSearch.toLowerCase())
       )
     : [];
-
+  // tinh tong tien
   const calculateTotal = () => {
     let total = 0;
     if (selectedService?.id === 'maintenance' && selectedPackage) {
@@ -306,7 +305,7 @@ const SelectService = ({ data, onNext, onBack }) => {
     }
     return total;
   };
-
+  // giao dien chon loai dich vu
   return (
     <div>
       <div className="mb-6">

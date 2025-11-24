@@ -23,7 +23,7 @@ const ForgotPasswordFlow = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/password/forgot`, {
+      const response = await axios.post(`${API_BASE_URL}/password/forgot`, {
         email: email
       });
 
@@ -46,7 +46,7 @@ const ForgotPasswordFlow = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/password/verify-otp`, {
+      const response = await axios.post(`${API_BASE_URL}/password/verify-otp`, {
         email: email,
         otpCode: otpCode
       });
@@ -81,7 +81,7 @@ const ForgotPasswordFlow = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/password/reset`, {
+      const response = await axios.post(`${API_BASE_URL}/password/reset`, {
         email: email,
         otpCode: otpCode,
         newPassword: newPassword

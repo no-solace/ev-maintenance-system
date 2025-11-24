@@ -16,12 +16,12 @@ export const formatDate = (date, formatStr = 'dd/MM/yyyy') => {
   
   let dateObj;
   if (typeof date === 'string') {
-    // Handle dd-MM-yyyy format from backend
+    // format dd-MM-yyyy from backend
     if (date.includes('-') && date.split('-')[0].length === 2) {
       const [day, month, year] = date.split('-');
       dateObj = new Date(`${year}-${month}-${day}`);
     } else {
-      // Handle ISO format YYYY-MM-DD
+      // format ISO
       dateObj = parseISO(date);
     }
   } else {

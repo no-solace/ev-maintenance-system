@@ -10,6 +10,8 @@ import org.mapstruct.Named;
 @Mapper(componentModel = "spring")
 public interface ServiceCenterMapper {
     @Mapping(source = "centerAddress", target = "centerAddress", qualifiedByName = "addressToString")
+    @Mapping(source = "centerAddress.latitude", target = "latitude")
+    @Mapping(source = "centerAddress.longitude", target = "longitude")
     ServiceCenterDTO toDTO(ServiceCenterEntity entity);
 
     @Mapping(target = "centerAddress", ignore = true)
@@ -17,6 +19,6 @@ public interface ServiceCenterMapper {
 
     @Named("addressToString")
     default String addressToString(AddressEntity address) {
-        return address.toString();
+        return address != null ? address.toString() : null;
     }
 }

@@ -35,11 +35,7 @@ const Settings = () => {
   });
 
   // phuong thuc thanh toan
-  const [paymentMethods, setPaymentMethods] = useState([
-    { id: 1, type: 'visa', last4: '4242', isDefault: true },
-    { id: 2, type: 'mastercard', last4: '8888', isDefault: false },
-    { id: 3, type: 'naspa', last4: '1234', isDefault: false }
-  ]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   const tabs = [
     { key: 'general', label: 'Chung', icon: FiGlobe },

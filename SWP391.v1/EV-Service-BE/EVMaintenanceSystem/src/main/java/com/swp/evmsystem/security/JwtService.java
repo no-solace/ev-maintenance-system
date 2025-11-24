@@ -8,6 +8,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -15,17 +16,25 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @Slf4j
 @Service
 public class JwtService {
 
+    private final RedisTemplate<String, String> redisTemplate;
+    private static final String BLACKLIST_PREFIX = "blacklist:token:";
+
     @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
+
+    public JwtService(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     /**
      * Extract username (email) from JWT token
@@ -94,7 +103,9 @@ public class JwtService {
      */
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        boolean isValid = (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        boolean isValid = (username.equals(userDetails.getUsername()))
+                && !isTokenExpired(token)
+                && !isTokenBlacklisted(token);
         log.debug("JWT token validation for user {}: {}", userDetails.getUsername(), isValid);
         return isValid;
     }
@@ -175,5 +186,35 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Get remaining time until token expiration in milliseconds
+     */
+    public long getRemainingExpirationTime(String token) {
+        Date expiration = extractExpiration(token);
+        return expiration.getTime() - System.currentTimeMillis();
+    }
+
+    /**
+     * Blacklist a token (for logout)
+     */
+    public void blacklistToken(String token) {
+        long remainingTime = getRemainingExpirationTime(token);
+        if (remainingTime > 0) {
+            String key = BLACKLIST_PREFIX + token;
+            long ttlSeconds = remainingTime / 1000;
+            redisTemplate.opsForValue().set(key, "blacklisted", ttlSeconds, TimeUnit.SECONDS);
+            log.info("Token blacklisted successfully with TTL: {} seconds", ttlSeconds);
+        }
+    }
+
+    /**
+     * Check if token is blacklisted
+     */
+    private boolean isTokenBlacklisted(String token) {
+        String key = BLACKLIST_PREFIX + token;
+        Boolean exists = redisTemplate.hasKey(key);
+        return exists != null && exists;
     }
 }

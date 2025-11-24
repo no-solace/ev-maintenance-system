@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-17T18:01:13+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.8 (Microsoft)"
+    date = "2025-11-23T02:08:46+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.9 (Microsoft)"
 )
 @Component
 public class CustomerMapperImpl implements CustomerMapper {
@@ -31,9 +31,11 @@ public class CustomerMapperImpl implements CustomerMapper {
 
         customerDTO.address( addressToString( entity.getAddress() ) );
         customerDTO.status( statusToString( entity.getStatus() ) );
-        customerDTO.vehicles( electricVehicleEntityListToElectricVehicleDTOList( entity.getVehicle() ) );
+        customerDTO.vehicles( electricVehicleEntityListToElectricVehicleDTOList( entity.getVehicles() ) );
         customerDTO.fullName( entity.getFullName() );
-        customerDTO.id( entity.getId() );
+        if ( entity.getId() != null ) {
+            customerDTO.id( entity.getId() );
+        }
         customerDTO.email( entity.getEmail() );
         customerDTO.phone( entity.getPhone() );
 

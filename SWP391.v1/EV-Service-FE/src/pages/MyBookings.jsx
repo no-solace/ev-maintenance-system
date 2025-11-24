@@ -20,6 +20,8 @@ const MyBookings = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedBookingForDetail, setSelectedBookingForDetail] = useState(null);
 
   // Fetch bookings from backend
   useEffect(() => {
@@ -187,6 +189,114 @@ const MyBookings = () => {
     }
   };
 
+  const openDetailModal = (booking) => {
+    setSelectedBookingForDetail(booking);
+    setShowDetailModal(true);
+  };
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedBookingForDetail(null);
+  };
+
+  const handleDownloadReceipt = () => {
+    if (!selectedBookingForDetail) return;
+
+    const b = selectedBookingForDetail;
+    const receiptContent = `
+╔════════════════════════════════════════════════════════════════╗
+║           BIÊN NHẬN ĐẶT LỊCH DỊCH VỤ VINFAST                 ║
+║              Hệ thống bảo dưỡng xe điện                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📋 THÔNG TIN ĐẶT LỊCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Mã đặt lịch:          #${b.bookingId}
+Trạng thái:           ${getStatusLabel(b.status?.toLowerCase())}
+Loại dịch vụ:         ${b.offerType || b.serviceName || 'Dịch vụ'}
+Ngày hẹn:             ${b.date || formatDate(b.bookingDate)}
+Giờ hẹn:              ${b.time || b.bookingTime}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  👤 THÔNG TIN KHÁCH HÀNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Họ và tên:            ${b.customerName || 'N/A'}
+Số điện thoại:        ${b.customerPhone || 'N/A'}
+Email:                ${b.customerEmail || 'N/A'}
+Địa chỉ:              ${b.customerAddress || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🚗 THÔNG TIN XE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Loại xe:              VinFast ${b.eVModel || b.vehicleModel || 'N/A'}
+Biển số xe:           ${b.licensePlate || b.vehiclePlate || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📍 THÔNG TIN TRUNG TÂM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Trung tâm:            ${b.center}
+Địa chỉ:              ${b.address || 'N/A'}
+${b.assignedTechnicianName ? `Kỹ thuật viên:        ${b.assignedTechnicianName}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  💰 THÔNG TIN CHI PHÍ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${b.estimatedCost ? `Chi phí dự kiến:      ${formatCurrency(b.estimatedCost)}` : ''}
+${b.totalCost ? `Tổng chi phí:         ${formatCurrency(b.totalCost)}` : ''}
+${b.maintenancePackage ? `Gói bảo dưỡng:        ${b.maintenancePackage}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📝 GHI CHÚ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${b.problemDescription ? `Mô tả vấn đề:\n${b.problemDescription}\n\n` : ''}${b.notes ? `Ghi chú:\n${b.notes}\n\n` : ''}
+⚠️  LƯU Ý QUAN TRỌNG:
+• Vui lòng đến đúng giờ hẹn (khuyến nghị đến trước 15 phút)
+• Mang theo giấy tờ xe và CMND/CCCD
+• Nếu không thể đến, vui lòng thông báo trước 24 giờ
+• Liên hệ hotline nếu cần hỗ trợ
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ngày tạo biên nhận:   ${new Date().toLocaleString('vi-VN')}
+
+════════════════════════════════════════════════════════════════
+            © 2025 VinFast EV Service System
+       Cảm ơn quý khách đã tin tưởng sử dụng dịch vụ!
+════════════════════════════════════════════════════════════════
+`.trim();
+
+    const blob = new Blob([receiptContent], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Bien-nhan-${b.bookingId}-${new Date().getTime()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Đã tải biên nhận thành công!');
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending_payment: 'Chờ thanh toán',
+      upcoming: 'Sắp tới',
+      cancellation_requested: 'Chờ duyệt hủy',
+      received: 'Đã tiếp nhận',
+      completed: 'Hoàn thành',
+      cancelled: 'Đã hủy'
+    };
+    return labels[status] || 'Không rõ';
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-6">
@@ -273,6 +383,7 @@ const MyBookings = () => {
                       <Button 
                         size="sm" 
                         variant="outline"
+                        onClick={() => openDetailModal(b)}
                         className="w-full border border-sky-500 text-sky-600 bg-white hover:bg-sky-50 focus:ring-sky-400"
                       >
                         Chi tiết
@@ -300,6 +411,7 @@ const MyBookings = () => {
                       <Button 
                         size="sm" 
                         variant="outline"
+                        onClick={() => openDetailModal(b)}
                         className="w-full border border-sky-500 text-sky-600 bg-white hover:bg-sky-50 focus:ring-sky-400"
                       >
                         Chi tiết
@@ -322,6 +434,7 @@ const MyBookings = () => {
                       <Button 
                         size="sm" 
                         variant="outline"
+                        onClick={() => openDetailModal(b)}
                         className="w-full border border-sky-500 text-sky-600 bg-white hover:bg-sky-50 focus:ring-sky-400"
                       >
                         Chi tiết
@@ -342,6 +455,7 @@ const MyBookings = () => {
                       <Button 
                         size="sm" 
                         variant="outline"
+                        onClick={() => openDetailModal(b)}
                         className="w-full border border-sky-500 text-sky-600 bg-white hover:bg-sky-50 focus:ring-sky-400"
                       >
                         Chi tiết
@@ -352,6 +466,7 @@ const MyBookings = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
+                      onClick={() => openDetailModal(b)}
                       className="w-full border border-sky-500 text-sky-600 bg-white hover:bg-sky-50 focus:ring-sky-400"
                     >
                       Chi tiết
@@ -446,6 +561,203 @@ const MyBookings = () => {
                   disabled={!cancelReason.trim()}
                 >
                   Xác nhận hủy
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal chi tiết lịch hẹn */}
+      {showDetailModal && selectedBookingForDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 z-10">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-900">Chi tiết lịch hẹn</h3>
+                <button
+                  onClick={closeDetailModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FiX className="text-xl text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Status Badge */}
+              <div className="mb-6 text-center">
+                {getStatusBadge(selectedBookingForDetail.status?.toLowerCase())}
+                <div className="mt-3 text-2xl font-bold text-teal-600">
+                  Mã đặt lịch: #{selectedBookingForDetail.bookingId}
+                </div>
+              </div>
+
+              {/* Thông tin đặt lịch */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg border border-teal-200">
+                <h4 className="font-semibold text-teal-700 mb-3 flex items-center gap-2">
+                  <FiCalendar /> Thông tin đặt lịch
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Loại dịch vụ:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.offerType || selectedBookingForDetail.serviceName || 'Dịch vụ'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ngày hẹn:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.date || formatDate(selectedBookingForDetail.bookingDate)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Giờ hẹn:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.time || selectedBookingForDetail.bookingTime}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin khách hàng */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <FiUser /> Thông tin khách hàng
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Họ và tên:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.customerName || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Số điện thoại:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.customerPhone || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.customerEmail || 'N/A'}</span>
+                  </div>
+                  {selectedBookingForDetail.customerAddress && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Địa chỉ:</span>
+                      <span className="font-semibold text-gray-900">{selectedBookingForDetail.customerAddress}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Thông tin xe */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-700 mb-3">🚗 Thông tin xe</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Loại xe:</span>
+                    <span className="font-semibold text-gray-900">VinFast {selectedBookingForDetail.eVModel || selectedBookingForDetail.vehicleModel || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Biển số xe:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.licensePlate || selectedBookingForDetail.vehiclePlate || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin trung tâm */}
+              <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h4 className="font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                  <FiMapPin /> Thông tin trung tâm
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trung tâm:</span>
+                    <span className="font-semibold text-gray-900">{selectedBookingForDetail.center}</span>
+                  </div>
+                  {selectedBookingForDetail.address && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Địa chỉ:</span>
+                      <span className="font-semibold text-gray-900 text-right ml-4">{selectedBookingForDetail.address}</span>
+                    </div>
+                  )}
+                  {selectedBookingForDetail.assignedTechnicianName && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Kỹ thuật viên:</span>
+                      <span className="font-semibold text-gray-900">{selectedBookingForDetail.assignedTechnicianName}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Thông tin chi phí */}
+              {(selectedBookingForDetail.estimatedCost || selectedBookingForDetail.totalCost || selectedBookingForDetail.maintenancePackage) && (
+                <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-green-700 mb-3">💰 Thông tin chi phí</h4>
+                  <div className="space-y-2 text-sm">
+                    {selectedBookingForDetail.estimatedCost && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Chi phí dự kiến:</span>
+                        <span className="font-semibold text-gray-900">{formatCurrency(selectedBookingForDetail.estimatedCost)}</span>
+                      </div>
+                    )}
+                    {selectedBookingForDetail.totalCost && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Tổng chi phí:</span>
+                        <span className="font-semibold text-green-700 text-lg">{formatCurrency(selectedBookingForDetail.totalCost)}</span>
+                      </div>
+                    )}
+                    {selectedBookingForDetail.maintenancePackage && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Gói bảo dưỡng:</span>
+                        <span className="font-semibold text-gray-900">{selectedBookingForDetail.maintenancePackage}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Ghi chú */}
+              {(selectedBookingForDetail.problemDescription || selectedBookingForDetail.notes) && (
+                <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-semibold text-yellow-700 mb-3">📝 Ghi chú</h4>
+                  {selectedBookingForDetail.problemDescription && (
+                    <div className="mb-2">
+                      <p className="text-xs text-gray-600 mb-1">Mô tả vấn đề:</p>
+                      <p className="text-sm text-gray-900 italic">{selectedBookingForDetail.problemDescription}</p>
+                    </div>
+                  )}
+                  {selectedBookingForDetail.notes && (
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Ghi chú thêm:</p>
+                      <p className="text-sm text-gray-900 italic">{selectedBookingForDetail.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Lưu ý quan trọng */}
+              <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <FiAlertCircle className="text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-red-800">
+                    <strong>Lưu ý quan trọng:</strong>
+                    <ul className="list-disc ml-4 mt-2 space-y-1">
+                      <li>Vui lòng đến đúng giờ hẹn (khuyến nghị đến trước 15 phút)</li>
+                      <li>Mang theo giấy tờ xe và CMND/CCCD</li>
+                      <li>Nếu không thể đến, vui lòng thông báo trước 24 giờ</li>
+                      <li>Liên hệ hotline nếu cần hỗ trợ</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <Button
+                  variant="primary"
+                  onClick={handleDownloadReceipt}
+                  className="flex-1 bg-teal-600 hover:bg-teal-700"
+                >
+                  📥 Tải biên nhận (.txt)
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={closeDetailModal}
+                  className="flex-1"
+                >
+                  Đóng
                 </Button>
               </div>
             </div>

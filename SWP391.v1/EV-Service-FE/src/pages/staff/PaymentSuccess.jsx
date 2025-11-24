@@ -19,24 +19,71 @@ const PaymentSuccess = () => {
 
   const handleVNPayReturn = async () => {
     try {
-      // Get all query parameters
+      // Get all query parameters from URL
       const queryParams = new URLSearchParams(location.search);
       const params = Object.fromEntries(queryParams.entries());
 
       console.log('📥 VNPay return params (Staff Payment):', params);
 
-      // Process the return from VNPay
-      const response = await vnpayService.handleReturn(params);
+      // Check if we have VNPay response parameters
+      if (!params.vnp_ResponseCode) {
+        setError('Không nhận được thông tin từ VNPay');
+        setLoading(false);
+        return;
+      }
 
-      if (response.success) {
-        setResult(response.data);
-        
-        // If payment successful, trigger confetti
-        if (response.data.success || response.data.responseCode === '00') {
-          triggerConfetti();
+      // Parse VNPay response directly from URL params
+      const responseCode = params.vnp_ResponseCode;
+      const transactionNo = params.vnp_TransactionNo;
+      const txnRef = params.vnp_TxnRef;
+      const amount = params.vnp_Amount;
+      const bankCode = params.vnp_BankCode;
+      const payDate = params.vnp_PayDate;
+
+      // Check if payment was successful
+      const isSuccess = responseCode === '00';
+
+      // Parse invoice number and payment ID from txnRef
+      // Format: {invoiceNumber}_{paymentId}_{timestamp}
+      let invoiceNumber = null;
+      let paymentId = null;
+      
+      if (txnRef) {
+        const parts = txnRef.split('_');
+        if (parts.length >= 3) {
+          // Last part is timestamp, second last is paymentId, rest is invoiceNumber
+          paymentId = parts[parts.length - 2];
+          invoiceNumber = parts.slice(0, parts.length - 2).join('_');
         }
-      } else {
-        setError(response.error);
+      }
+
+      const result = {
+        success: isSuccess,
+        responseCode: responseCode,
+        transactionNo: transactionNo,
+        txnRef: txnRef,
+        amount: amount ? parseInt(amount) : 0,
+        bankCode: bankCode,
+        payDate: payDate,
+        invoiceNumber: invoiceNumber,
+        paymentId: paymentId,
+        message: getResponseMessage(responseCode)
+      };
+
+      console.log('📊 Parsed payment result:', result);
+
+      setResult(result);
+
+      // If payment successful, trigger confetti and notify backend
+      if (isSuccess) {
+        triggerConfetti();
+        
+        // Notify backend about successful payment (optional, for logging)
+        try {
+          await vnpayService.handleReturn(params);
+        } catch (err) {
+          console.warn('⚠️ Failed to notify backend, but payment was successful:', err);
+        }
       }
     } catch (err) {
       console.error('Error processing VNPay return:', err);
@@ -44,6 +91,24 @@ const PaymentSuccess = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getResponseMessage = (responseCode) => {
+    const messages = {
+      '00': 'Giao dịch thành công',
+      '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường)',
+      '09': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng',
+      '10': 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
+      '11': 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán',
+      '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa',
+      '13': 'Giao dịch không thành công do Quý khách nhập sai mật khẩu xác thực giao dịch (OTP)',
+      '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
+      '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch',
+      '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày',
+      '75': 'Ngân hàng thanh toán đang bảo trì',
+      '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định',
+    };
+    return messages[responseCode] || 'Lỗi không xác định';
   };
 
   const triggerConfetti = () => {
@@ -225,16 +290,6 @@ const PaymentSuccess = () => {
             >
               Quay lại danh sách thanh toán
             </Button>
-            
-            {isSuccess && result?.invoiceNumber && (
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/staff/invoices/${result.invoiceNumber}`)}
-                className="w-full"
-              >
-                Xem chi tiết hóa đơn
-              </Button>
-            )}
           </div>
 
           {/* Support Note */}

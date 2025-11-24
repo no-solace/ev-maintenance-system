@@ -12,35 +12,20 @@ const StaffLayout = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
-  // Fetch center name when component mounts
+  //  set ten trung tam neu co
   React.useEffect(() => {
-    const fetchCenterInfo = async () => {
-      if (user?.userId) {
-        try {
-          const response = await fetch(`http://localhost:8080/api/employees/${user.userId}`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('ev_auth_token')}`
-            }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.centerName) {
-              setCenterName(data.centerName);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching center info:', error);
-        }
-      }
-    };
-    fetchCenterInfo();
-  }, [user?.userId]);
+    if (user?.centerName) {
+      setCenterName(user.centerName);
+    } else if (user?.center?.name) {
+      setCenterName(user.center.name);
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
+  // menu items cho staff
   const menuItems = [
     { path: '/staff/dashboard', label: 'Tổng quan', icon: FiGrid },
     { path: '/staff/customers', label: 'Khách hàng', icon: FiUsers },
@@ -50,7 +35,7 @@ const StaffLayout = () => {
     { path: '/staff/spare-parts', label: 'Quản lý phụ tùng', icon: FiPackage },
     { path: '/staff/payments', label: 'Thanh toán', icon: FiDollarSign },
   ];
-
+  // giao dien layout chinh
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       <aside className={`${
@@ -62,10 +47,7 @@ const StaffLayout = () => {
               EV
             </div>
             {isSidebarOpen && (
-              <div>
-                <h2 className="font-bold text-gray-900">EV Service</h2>
-                <p className="text-xs text-gray-500">Staff Portal</p>
-              </div>
+              <h2 className="font-bold text-gray-900">EV Service</h2>
             )}
           </div>
         </div>

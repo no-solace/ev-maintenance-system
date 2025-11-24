@@ -1,14 +1,15 @@
 package com.swp.evmsystem.mapper;
 
 import com.swp.evmsystem.dto.response.ServiceCenterDTO;
+import com.swp.evmsystem.entity.AddressEntity;
 import com.swp.evmsystem.entity.ServiceCenterEntity;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-17T18:01:13+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.8 (Microsoft)"
+    date = "2025-11-23T02:08:46+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.9 (Microsoft)"
 )
 @Component
 public class ServiceCenterMapperImpl implements ServiceCenterMapper {
@@ -22,11 +23,14 @@ public class ServiceCenterMapperImpl implements ServiceCenterMapper {
         ServiceCenterDTO.ServiceCenterDTOBuilder serviceCenterDTO = ServiceCenterDTO.builder();
 
         serviceCenterDTO.centerAddress( addressToString( entity.getCenterAddress() ) );
+        serviceCenterDTO.latitude( entityCenterAddressLatitude( entity ) );
+        serviceCenterDTO.longitude( entityCenterAddressLongitude( entity ) );
         serviceCenterDTO.id( entity.getId() );
         serviceCenterDTO.centerName( entity.getCenterName() );
         serviceCenterDTO.centerPhone( entity.getCenterPhone() );
         serviceCenterDTO.startTime( entity.getStartTime() );
         serviceCenterDTO.endTime( entity.getEndTime() );
+        serviceCenterDTO.maxCapacity( entity.getMaxCapacity() );
 
         return serviceCenterDTO.build();
     }
@@ -44,7 +48,26 @@ public class ServiceCenterMapperImpl implements ServiceCenterMapper {
         serviceCenterEntity.centerPhone( dto.getCenterPhone() );
         serviceCenterEntity.startTime( dto.getStartTime() );
         serviceCenterEntity.endTime( dto.getEndTime() );
+        if ( dto.getMaxCapacity() != null ) {
+            serviceCenterEntity.maxCapacity( dto.getMaxCapacity() );
+        }
 
         return serviceCenterEntity.build();
+    }
+
+    private Double entityCenterAddressLatitude(ServiceCenterEntity serviceCenterEntity) {
+        AddressEntity centerAddress = serviceCenterEntity.getCenterAddress();
+        if ( centerAddress == null ) {
+            return null;
+        }
+        return centerAddress.getLatitude();
+    }
+
+    private Double entityCenterAddressLongitude(ServiceCenterEntity serviceCenterEntity) {
+        AddressEntity centerAddress = serviceCenterEntity.getCenterAddress();
+        if ( centerAddress == null ) {
+            return null;
+        }
+        return centerAddress.getLongitude();
     }
 }

@@ -8,6 +8,7 @@ const Card = ({
   padding = true,
   ...props 
 }) => {
+  // giao dien card
   return (
     <div
       className={cn(
@@ -24,7 +25,7 @@ const Card = ({
     </div>
   );
 };
-
+  // giao dien card header
 const CardHeader = ({ className, children, ...props }) => {
   return (
     <div
@@ -38,7 +39,7 @@ const CardHeader = ({ className, children, ...props }) => {
     </div>
   );
 };
-
+  // giao dien card title
 const CardTitle = ({ className, children, ...props }) => {
   return (
     <h3
@@ -52,7 +53,7 @@ const CardTitle = ({ className, children, ...props }) => {
     </h3>
   );
 };
-
+// giao dien card description
 const CardDescription = ({ className, children, ...props }) => {
   return (
     <p
@@ -66,7 +67,7 @@ const CardDescription = ({ className, children, ...props }) => {
     </p>
   );
 };
-
+ // giao dien card content
 const CardContent = ({ className, children, ...props }) => {
   return (
     <div
@@ -80,7 +81,7 @@ const CardContent = ({ className, children, ...props }) => {
     </div>
   );
 };
-
+ // giao dien card footer
 const CardFooter = ({ className, children, ...props }) => {
   return (
     <div
@@ -94,6 +95,7 @@ const CardFooter = ({ className, children, ...props }) => {
     </div>
   );
 };
+// export cac component con
 
 Card.Header = CardHeader;
 Card.Title = CardTitle;

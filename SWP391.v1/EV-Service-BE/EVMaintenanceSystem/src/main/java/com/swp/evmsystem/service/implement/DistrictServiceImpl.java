@@ -11,7 +11,6 @@ public class DistrictServiceImpl implements DistrictService {
     @Autowired
     DistrictRepository districtEntityRepository;
 
-
     @Override
     public void createDistrict(DistrictEntity districtEntity) {
         districtEntityRepository.save(districtEntity);

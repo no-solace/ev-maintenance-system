@@ -32,7 +32,7 @@ public class ServiceCenterEntity {
     LocalTime endTime;
     @Column(name = "max_capacity")
     int maxCapacity;
-    @OneToOne(cascade = CascadeType.MERGE, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.MERGE, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "address_id")
     AddressEntity centerAddress;
 }

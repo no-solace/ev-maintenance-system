@@ -19,4 +19,8 @@ public class ServiceCenterDTO {
     private LocalTime startTime;
     @JsonFormat(pattern = "HH:mm")
     private LocalTime endTime;
+    private Integer maxCapacity;
+    // Geographic coordinates
+    private Double latitude;
+    private Double longitude;
 }

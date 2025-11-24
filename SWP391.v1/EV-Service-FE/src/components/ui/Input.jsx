@@ -13,7 +13,7 @@ const Input = React.forwardRef(({
   ...props
 }, ref) => {
   const inputId = props.id || props.name;
-  
+   // giao dien input
   return (
     <div className={cn('space-y-1', wrapperClassName)}>
       {label && (

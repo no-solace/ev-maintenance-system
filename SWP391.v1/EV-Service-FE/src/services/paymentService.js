@@ -1,16 +1,8 @@
 import api from './api';
 
-/**
- * Payment Service
- * Handles all payment and invoice related API calls
- */
 
 const paymentService = {
-  /**
-   * Create a new payment/invoice
-   * @param {Object} paymentData - Payment data
-   * @returns {Promise}
-   */
+// tao hoa don moi
   createPayment: async (paymentData) => {
     try {
       console.log('📤 Sending payment data to backend:', paymentData);
@@ -27,11 +19,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Get all payments
-   * @returns {Promise}
-   */
+// Lay tat ca hoa don
   getAllPayments: async () => {
     try {
       const response = await api.get('/payments');
@@ -46,12 +34,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Get payment by ID
-   * @param {number} paymentId
-   * @returns {Promise}
-   */
+// Lay hoa don theo id
   getPaymentById: async (paymentId) => {
     try {
       const response = await api.get(`/payments/${paymentId}`);
@@ -66,12 +49,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Get payment by invoice number
-   * @param {string} invoiceNumber
-   * @returns {Promise}
-   */
+// Lay hoa don theo so hoa don
   getPaymentByInvoiceNumber: async (invoiceNumber) => {
     try {
       const response = await api.get(`/payments/invoice/${invoiceNumber}`);
@@ -87,11 +65,7 @@ const paymentService = {
     }
   },
 
-  /**
-   * Get payments by status
-   * @param {string} status - PENDING, PAID, COMPLETED
-   * @returns {Promise}
-   */
+// Lay hoa don theo trang thai
   getPaymentsByStatus: async (status) => {
     try {
       const response = await api.get(`/payments/status/${status}`);
@@ -106,12 +80,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Search payments by keyword
-   * @param {string} searchTerm - Search keyword
-   * @returns {Promise}
-   */
+// Tim kiem hoa don
   searchPayments: async (searchTerm) => {
     try {
       const response = await api.get(`/payments/search?q=${searchTerm}`);
@@ -127,12 +96,7 @@ const paymentService = {
     }
   },
 
-  /**
-   * Mark payment as paid (confirm payment received)
-   * @param {number} paymentId
-   * @param {string} paymentMethod - CASH or VNPAY
-   * @returns {Promise}
-   */
+// Xac nhan hoa don da thanh toan
   markAsPaid: async (paymentId, paymentMethod = 'CASH') => {
     try {
       const response = await api.post(`/payments/${paymentId}/mark-paid`, { paymentMethod });
@@ -147,12 +111,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Mark payment as completed (confirm bank transfer)
-   * @param {number} paymentId
-   * @returns {Promise}
-   */
+// Hoan tat hoa don
   markAsCompleted: async (paymentId) => {
     try {
       const response = await api.post(`/payments/${paymentId}/mark-completed`);
@@ -167,13 +126,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Update payment status
-   * @param {number} paymentId
-   * @param {string} status - PENDING, PAID, COMPLETED
-   * @returns {Promise}
-   */
+// Cap nhat trang thai hoa don
   updatePaymentStatus: async (paymentId, status) => {
     try {
       const response = await api.patch(`/payments/${paymentId}/status`, { status });
@@ -188,11 +141,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Get payment statistics
-   * @returns {Promise}
-   */
+// Lay thong ke hoa don
   getPaymentStatistics: async () => {
     try {
       const response = await api.get('/payments/statistics');
@@ -207,13 +156,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Get payments by date range
-   * @param {string} startDate - ISO date string
-   * @param {string} endDate - ISO date string
-   * @returns {Promise}
-   */
+// Lay hoa don theo khoang thoi gian
   getPaymentsByDateRange: async (startDate, endDate) => {
     try {
       const response = await api.get(`/payments/date-range?startDate=${startDate}&endDate=${endDate}`);
@@ -228,12 +171,7 @@ const paymentService = {
       };
     }
   },
-
-  /**
-   * Create payment from vehicle reception (primary workflow)
-   * @param {number} receptionId
-   * @returns {Promise}
-   */
+// Tao hoa don tu don tiep nhan
   createPaymentFromReception: async (receptionId) => {
     try {
       console.log('📤 Creating payment from vehicle reception:', receptionId);

@@ -110,8 +110,13 @@ public class PaymentEntity {
         if (discountAmount == null) {
             discountAmount = 0.0;
         }
+        // Only calculate finalAmount if not already set by service layer
         if (finalAmount == null && totalAmount != null) {
             finalAmount = totalAmount - discountAmount;
+        }
+        // Ensure finalAmount is never negative
+        if (finalAmount != null && finalAmount < 0) {
+            finalAmount = 0.0;
         }
     }
     

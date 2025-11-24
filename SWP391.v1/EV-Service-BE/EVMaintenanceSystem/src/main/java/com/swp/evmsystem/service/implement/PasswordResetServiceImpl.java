@@ -1,26 +1,26 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.entity.PasswordResetTokenEntity;
 import com.swp.evmsystem.entity.UserEntity;
-import com.swp.evmsystem.repository.PasswordResetTokenRepository;
 import com.swp.evmsystem.repository.UserRepository;
 import com.swp.evmsystem.service.EmailService;
 import com.swp.evmsystem.service.PasswordResetService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PasswordResetServiceImpl implements PasswordResetService {
     
-    private final PasswordResetTokenRepository tokenRepository;
+    private final RedisTemplate<String, String> redisTemplate;
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
@@ -30,78 +30,77 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     
     @Value("${otp.length:6}")
     private int otpLength;
-//guiotp
-    @Transactional
+    
+    private static final String OTP_PREFIX = "otp:";
+    private static final String OTP_VERIFIED_PREFIX = "otp:verified:";
+
+    @Override
     public void sendOTPToEmail(String email) throws MessagingException {
-        // Kiểm tra email có tồn tại trong hệ thống không
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống"));
+        // Verify user exists
+        userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống"));
         
-        // random otp
+        // Generate OTP
         String otpCode = generateOTP();
         
-        // Lưu OTP vào database
-        PasswordResetTokenEntity token = PasswordResetTokenEntity.builder()
-                .email(email)
-                .otpCode(otpCode)
-                .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusMinutes(otpExpirationMinutes))
-                .isUsed(false)
-                .build();
+        // Store OTP in Redis with TTL
+        String redisKey = OTP_PREFIX + email;
+        redisTemplate.opsForValue().set(redisKey, otpCode, otpExpirationMinutes, TimeUnit.MINUTES);
         
-        tokenRepository.save(token);
+        log.info("OTP stored in Redis for email: {} with TTL: {} minutes", email, otpExpirationMinutes);
         
-        // Gửi email chứa OTP
+        // Send OTP via email
         emailService.sendOTPEmail(email, otpCode);
     }
-    
-//xac thuc otp
-    @Transactional(readOnly = true)
+
+    @Override
     public boolean verifyOTP(String email, String otpCode) {
-        // tim toekn
-        PasswordResetTokenEntity token = tokenRepository
-                .findByEmailAndOtpCodeAndIsUsedFalse(email, otpCode)
-                .orElse(null);
+        String redisKey = OTP_PREFIX + email;
+        String storedOtp = redisTemplate.opsForValue().get(redisKey);
         
-        if (token == null) {
+        if (storedOtp == null) {
+            log.warn("OTP not found or expired for email: {}", email);
             return false;
         }
         
-        // Kiểm tra xem OTP đã hết hạn chưa
-        if (token.isExpired()) {
-            return false;
+        boolean isValid = storedOtp.equals(otpCode);
+        
+        if (isValid) {
+            // Mark OTP as verified (store for password reset)
+            String verifiedKey = OTP_VERIFIED_PREFIX + email;
+            redisTemplate.opsForValue().set(verifiedKey, otpCode, otpExpirationMinutes, TimeUnit.MINUTES);
+            log.info("OTP verified successfully for email: {}", email);
+        } else {
+            log.warn("Invalid OTP attempt for email: {}", email);
         }
         
-        return true;
+        return isValid;
     }
-    
-//dat lai mk
-    @Transactional
+
+    @Override
     public void resetPassword(String email, String otpCode, String newPassword) {
-        // Xác thực OTP
-        PasswordResetTokenEntity token = tokenRepository
-                .findByEmailAndOtpCodeAndIsUsedFalse(email, otpCode)
-                .orElseThrow(() -> new RuntimeException("Mã OTP không hợp lệ hoặc đã được sử dụng"));
+        // Verify OTP from verified cache
+        String verifiedKey = OTP_VERIFIED_PREFIX + email;
+        String verifiedOtp = redisTemplate.opsForValue().get(verifiedKey);
         
-        // Kiểm tra OTP có hết hạn không
-        if (token.isExpired()) {
-            throw new RuntimeException("Mã OTP đã hết hạn");
+        if (verifiedOtp == null || !verifiedOtp.equals(otpCode)) {
+            throw new RuntimeException("Mã OTP không hợp lệ hoặc đã hết hạn");
         }
         
-        // Tìm user theo email
+        // Find user
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
         
-        // Cập nhật mật khẩu mới (đã mã hóa)
+        // Update password
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         
-        // Đánh dấu token đã được sử dụng
-        token.setIsUsed(true);
-        token.setUsedAt(LocalDateTime.now());
-        tokenRepository.save(token);
+        // Delete OTP from Redis (mark as used)
+        redisTemplate.delete(OTP_PREFIX + email);
+        redisTemplate.delete(verifiedKey);
+        
+        log.info("Password reset successfully for email: {}", email);
     }
-//random otp
+
     private String generateOTP() {
         Random random = new Random();
         StringBuilder otp = new StringBuilder();
@@ -112,10 +111,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         
         return otp.toString();
     }
-    
-//xat thuc otp
-    @Transactional
+
+    @Override
     public void cleanupExpiredTokens() {
-        tokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
+        // Redis automatically handles expiration with TTL
+        // This method is kept for interface compatibility but does nothing
+        log.debug("Cleanup called - Redis handles expiration automatically");
     }
 }

@@ -7,5 +7,6 @@ public enum BookingStatus {
     CANCELLATION_REQUESTED, // Customer requested cancellation (awaiting staff approval)
     RECEIVED,               // Customer arrived, vehicle received
     COMPLETED,              // Appointment completed
-    CANCELLED               // Appointment cancelled
+    CANCELLED,               // Appointment cancelled
+    VISITED                  // Customer visited without prior booking
 }

@@ -5,31 +5,62 @@ import com.swp.evmsystem.entity.CustomerEntity;
 import com.swp.evmsystem.entity.EmployeeEntity;
 import com.swp.evmsystem.entity.UserEntity;
 import com.swp.evmsystem.enums.Role;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.ObjectFactory;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
-public interface UserMapper {
+@Component
+public class UserMapper {
+    
     // Entity -> DTO
-    @Mapping(source = "role", target = "role", qualifiedByName = "roleToString")
-    @Mapping(source = "id", target = "userId")
-    @Mapping(target = "fullName", expression = "java(getFullNameFromEntity(entity))")
-    UserDTO toDTO(UserEntity entity);
+    public UserDTO toDTO(UserEntity entity) {
+        if (entity == null) {
+            return null;
+        }
 
-    UserEntity toEntity(UserDTO dto);
+        UserDTO dto = new UserDTO();
+        dto.setUserId(entity.getId());
+        dto.setPhone(entity.getPhone());
+        dto.setEmail(entity.getEmail());
+        dto.setRole(roleToString(entity.getRole()));
+        dto.setStatus(entity.getStatus() != null ? entity.getStatus().toString() : null);
+        dto.setFullName(getFullNameFromEntity(entity));
+        
+        // Map employee specific fields
+        if (entity instanceof EmployeeEntity employee) {
+            if (employee.getCenter() != null) {
+                dto.setCenterId(employee.getCenter().getId());
+                dto.setCenterName(employee.getCenter().getCenterName());
+            }
+        }
+        
+        return dto;
+    }
 
-    @Named("roleToString")
-    default String roleToString(Role role) {
+    // DTO -> Entity
+    public UserEntity toEntity(UserDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        UserEntity entity = createUserEntity(dto);
+        entity.setId(dto.getUserId());
+        entity.setPhone(dto.getPhone());
+        entity.setEmail(dto.getEmail());
+        
+        if (dto.getRole() != null) {
+            entity.setRole(Role.valueOf(dto.getRole().toUpperCase()));
+        }
+        
+        return entity;
+    }
+
+    private String roleToString(Role role) {
         if (role == null) {
             return "";
         }
-
         return role.toString();
     }
 
-    default String getFullNameFromEntity(UserEntity entity) {
+    private String getFullNameFromEntity(UserEntity entity) {
         if (entity == null) {
             return "Người dùng";
         }
@@ -51,8 +82,7 @@ public interface UserMapper {
         return "Người dùng";
     }
 
-    @ObjectFactory
-    default UserEntity createUserEntity(UserDTO dto) {
+    private UserEntity createUserEntity(UserDTO dto) {
         if (dto == null || dto.getRole() == null) {
             throw new IllegalArgumentException("userType must not be null");
         }

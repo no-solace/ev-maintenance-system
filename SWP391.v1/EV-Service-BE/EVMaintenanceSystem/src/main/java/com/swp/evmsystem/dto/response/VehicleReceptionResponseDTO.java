@@ -26,10 +26,40 @@ public class VehicleReceptionResponseDTO {
     String licensePlate;
     Integer mileage;
     List<String> services;
+    Integer packageId;  // ID của gói bảo dưỡng được chọn
+    String packageName;  // Tên gói bảo dưỡng
+    Integer packagePrice;  // Giá gói bảo dưỡng
+    List<SparePartInfo> spareParts;  // Danh sách phụ tùng đã chọn
+    List<InspectionRecordInfo> inspectionRecords;  // Danh sách hạng mục kiểm tra
     String technicianName;
     Integer technicianId;
     String notes;
     Double totalCost;
     String status;
     LocalDateTime createdAt;
+    LocalDateTime completedAt;
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class SparePartInfo {
+        Integer sparePartId;
+        String sparePartName;
+        Integer quantity;
+        Double unitPrice;
+        LocalDateTime requestedAt;  // Thời điểm yêu cầu phụ tùng
+    }
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class InspectionRecordInfo {
+        Integer recordId;
+        String taskCategory;
+        String taskDescription;
+        String actualStatus;
+        LocalDateTime checkedAt;
+    }
 }

@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { FiCheck, FiUser, FiPhone, FiMail, FiMapPin, FiEdit2, FiAlertCircle } from 'react-icons/fi';
+import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import { FiUser, FiPhone, FiMail, FiMapPin, FiAlertCircle } from 'react-icons/fi';
 import { vinfastModels } from '../../../data/serviceCenters';
-import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../../store/authStore';
 import bookingService from '../../../services/bookingService';
 // infor booking
-const ConfirmBooking = ({ data, onNext, onBack }) => {
-  const { user } = useAuthStore();
+const ConfirmBooking = forwardRef(({ data, onNext, goToNextStep, onBookingSuccess }, ref) => {
   
   const [customerInfo, setCustomerInfo] = useState(data.customerInfo || {
     name: '',
@@ -19,6 +17,12 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
   const [notes, setNotes] = useState(data.notes || '');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // submiet form
+  useImperativeHandle(ref, () => ({
+    submit: () => handleSubmit()
+  }));
+  
   // validation thong tin
   const validateForm = () => {
     const newErrors = {};
@@ -47,15 +51,13 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
     setIsSubmitting(true);
     
     try {
-      // Gọi API để tạo booking
-      // Backend API: POST /bookings
-      // Body: { eVId, centerId, bookingDate, bookingTime }
-      // Format time: if already has seconds (HH:mm:ss), use as is; otherwise add :00
+      // Định dạng thời gian đặt lịch
+      // Format booking time
       const formattedTime = data.timeSlot.split(':').length === 3 
         ? data.timeSlot 
         : data.timeSlot + ':00';
       
-      // Map service IDs to offer type IDs
+      //  Chuẩn bị payload đặt lịch
       const getOfferTypeId = (serviceId) => {
         const mapping = {
           'maintenance': 1, // Bảo dưỡng định kỳ
@@ -64,7 +66,7 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
         };
         return mapping[serviceId] || null;
       };
-      
+      // Prepare booking payload
       const bookingPayload = {
         eVId: parseInt(data.vehicleData?.id || data.vehicle?.id || data.vehicle) || null,
         centerId: parseInt(data.center?.id) || null,
@@ -100,7 +102,7 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
         address: customerInfo.address
       });
       
-      // Validate required fields
+      //  Goi API tao lich
       if (!bookingPayload.eVId || !bookingPayload.centerId) {
         toast.error('Thiếu thông tin xe hoặc trung tâm');
         setIsSubmitting(false);
@@ -114,10 +116,10 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
         
         console.log('✅ Booking created successfully with ID:', bookingId);
         
-        // Show success message and move to success step
+        // Hiển thị thông báo thành công
         toast.success('Đặt lịch thành công!');
         
-        // Update booking data with the created booking ID
+        // Cập nhật dữ liệu đặt lịch với ID đã tạo
         const finalBookingData = {
           ...data,
           customerInfo,
@@ -127,10 +129,13 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
           status: 'pending_payment'
         };
         
-        // Pass to next step (BookingSuccess)
+        // Lưu dữ liệu và kích hoạt modal thành công
         onNext(finalBookingData);
+        if (onBookingSuccess) {
+          onBookingSuccess(finalBookingData);
+        }
       } else {
-        // Check for specific error messages
+        // Kiểm tra các thông báo lỗi cụ thể
         const errorMsg = response.error || 'Không thể tạo lịch hẹn';
         if (errorMsg.includes('already has a pending booking') || errorMsg.includes('already booked')) {
           toast.error('🚗 Xe này đã có lịch hẹn khác. Vui lòng hủy lịch cũ trước khi đặt lịch mới.');
@@ -141,7 +146,7 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
         }
       }
     } catch (error) {
-      console.error('Booking error:', error);
+      console.error('Lỗi khi đặt lịch:', error);
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
     } finally {
       setIsSubmitting(false);
@@ -149,14 +154,14 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
   };
 
   const getVehicleName = () => {
-    // Use vehicleData if available (from MyVehicles), otherwise fall back to vinfastModels
+    // lay ten xe
     if (data.vehicleData) {
       return data.vehicleData.model || '';
     }
     const vehicle = vinfastModels.find(v => v.id === data.vehicle);
     return vehicle?.name || '';
   };
-
+  // lay tom tat dich vu
   const getServiceSummary = () => {
     if (data.service?.id === 'maintenance') {
       return `${data.service.name} - ${data.servicePackage?.name}`;
@@ -167,7 +172,7 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
     }
     return '';
   };
-
+  // tinh tong tien
   const calculateTotal = () => {
     if (data.service?.id === 'maintenance') {
       return data.servicePackage?.price || 0;
@@ -176,24 +181,41 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
     }
     return 0;
   };
-
+  // định dạng ngày tháng
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN');
   };
-
+  // định dạng ngày giờ
+  const formatDateTime = (dateString, timeString) => {
+    const date = new Date(dateString);
+    const days = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const dayName = days[date.getDay()];
+    const formattedDate = date.toLocaleDateString('vi-VN');
+    return `${dayName}, ${formattedDate}, ${timeString}`;
+  };
+  // lay thong tin xe
+  const getVehicleInfoTitle = () => {
+    const model = data.vehicleData?.model || getVehicleName();
+    const plate = data.vehicleData?.licensePlate || '';
+    if (model && plate) {
+      return `VinFast ${model} - ${plate}`;
+    } else if (model) {
+      return `VinFast ${model}`;
+    }
+    return 'xe của bạn';
+  };
+  // giao dien xac nhan dat lich
   return (
-    <div>
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Xác nhận thông tin đặt lịch
-        </h3>
-        <p className="text-sm text-gray-600">
-          Vui lòng kiểm tra và điền đầy đủ thông tin liên hệ
-        </p>
-      </div>
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-3">Thông tin dịch vụ</h4>
+    <div className="flex flex-col h-full">
+      <p className="text-sm text-gray-600 mb-4">
+        Vui lòng kiểm tra và điền đầy đủ thông tin liên hệ
+      </p>
+
+      <div className="flex-1">
+        <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="text-sm text-blue-800">
+            <p className="font-medium mb-2">Thông tin đặt lịch cho xe {getVehicleInfoTitle()}</p>
         <div className="space-y-2">
           <div className="flex justify-between items-center text-sm gap-4">
             <span className="text-gray-600 flex-shrink-0">Trung tâm:</span>
@@ -204,29 +226,9 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
             <span className="font-medium text-right line-clamp-1">{data.center?.address}</span>
           </div>
           <div className="flex justify-between items-center text-sm gap-4">
-            <span className="text-gray-600 flex-shrink-0">Ngày hẹn:</span>
-            <span className="font-medium text-right">{formatDate(data.date)}</span>
+            <span className="text-gray-600 flex-shrink-0">Thời gian:</span>
+            <span className="font-medium text-right">{formatDateTime(data.date, data.timeSlot)}</span>
           </div>
-          <div className="flex justify-between items-center text-sm gap-4">
-            <span className="text-gray-600 flex-shrink-0">Giờ hẹn:</span>
-            <span className="font-medium text-right">{data.timeSlot}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm gap-4">
-            <span className="text-gray-600 flex-shrink-0">Xe:</span>
-            <span className="font-medium text-right">VinFast {getVehicleName()}</span>
-          </div>
-          {data.vehicleData?.licensePlate && (
-            <div className="flex justify-between items-center text-sm gap-4">
-              <span className="text-gray-600 flex-shrink-0">Biển số:</span>
-              <span className="font-medium text-right">{data.vehicleData.licensePlate}</span>
-            </div>
-          )}
-          {data.vehicleData?.vin && (
-            <div className="flex justify-between items-center text-sm gap-4">
-              <span className="text-gray-600 flex-shrink-0">VIN:</span>
-              <span className="font-medium text-right break-all">{data.vehicleData.vin}</span>
-            </div>
-          )}
           {data.service?.id === 'parts' && data.parts.length > 0 && (
             <div className="mt-2 pt-2 border-t">
               <p className="text-sm text-gray-600 mb-1">Phụ tùng:</p>
@@ -257,9 +259,10 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
             </div>
           )}
         </div>
-      </div>
-      <div className="mb-6">
-        <h4 className="font-medium text-gray-900 mb-4">Thông tin khách hàng</h4>
+          </div>
+        </div>
+        <div className="mb-6">
+          <h4 className="font-medium text-gray-900 mb-4">Thông tin khách hàng</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Input
@@ -309,40 +312,23 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
           </div>
         </div>
         
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Ghi chú thêm (tùy chọn)
-          </label>
-          <textarea
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Thông tin thêm về xe, yêu cầu đặc biệt..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
-      </div>
-      {/* Deposit Payment Info */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start">
-          <FiAlertCircle className="text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-          <div className="text-sm">
-            <p className="font-semibold text-blue-900 mb-2">💳 Thanh toán đặt cọc</p>
-            <p className="text-blue-800 mb-2">
-              Sau khi tạo lịch hẹn, bạn cần thanh toán <strong className="text-blue-900">200,000đ</strong> tiền đặt cọc để giữ chỗ. Bạn có thể thanh toán ngay hoặc thanh toán sau từ trang "Lịch Hẹn Của Tôi".
-            </p>
-            <p className="text-red-600 font-medium">
-              ⚠️ Lưu ý: Vui lòng thanh toán trong vòng <strong>15 phút</strong> để xác nhận lịch hẹn, nếu không lịch sẽ bị hủy tự động.
-            </p>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ghi chú thêm (tùy chọn)
+            </label>
+            <textarea
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+              placeholder="Thông tin thêm về xe, yêu cầu đặc biệt..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
         </div>
-      </div>
 
-      <div className="mb-6 p-4 bg-amber-50 rounded-lg">
-        <div className="flex items-start">
-          <FiAlertCircle className="text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
-          <div className="text-sm text-amber-700">
-            <p className="font-medium mb-1">Lưu ý quan trọng:</p>
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="text-sm text-amber-800">
+            <p className="font-medium mb-2">Lưu ý</p>
             <ul className="space-y-1">
               <li>• Vui lòng đến đúng giờ đã hẹn</li>
               <li>• Mang theo giấy tờ xe khi đến</li>
@@ -352,27 +338,10 @@ const ConfirmBooking = ({ data, onNext, onBack }) => {
           </div>
         </div>
       </div>
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="bg-green-600 hover:bg-green-700 text-white px-8"
-        >
-          {isSubmitting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-              Đang xử lý...
-            </>
-          ) : (
-            <>
-              <FiCheck className="mr-2" />
-              Xác nhận đặt lịch
-            </>
-          )}
-        </Button>
-      </div>
     </div>
   );
-};
+});
+
+ConfirmBooking.displayName = 'ConfirmBooking';
 
 export default ConfirmBooking;

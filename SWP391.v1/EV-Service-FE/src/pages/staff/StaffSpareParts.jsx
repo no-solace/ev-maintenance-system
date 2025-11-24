@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  FiSearch, FiPlus, FiEdit2, FiTrash2, FiPackage,
-  FiAlertCircle, FiCheck, FiX
+  FiSearch, FiPackage, FiAlertCircle, FiCheck
 } from 'react-icons/fi';
 import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 import { sparePartService } from '../../services/sparePartService';
 
@@ -13,19 +11,6 @@ const StaffSpareParts = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedPart, setSelectedPart] = useState(null);
-  const [formData, setFormData] = useState({
-    partName: '',
-    partNumber: '',
-    category: '',
-    price: '',
-    stockQuantity: '',
-    minStockLevel: '',
-    supplier: '',
-    description: ''
-  });
 
   useEffect(() => {
     fetchSpareParts();
@@ -78,110 +63,6 @@ const StaffSpareParts = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      partName: '',
-      partNumber: '',
-      category: '',
-      price: '',
-      stockQuantity: '',
-      minStockLevel: '',
-      supplier: '',
-      description: ''
-    });
-  };
-
-  const handleAddPart = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const newPartData = {
-        partName: formData.partName,
-        partNumber: formData.partNumber,
-        category: formData.category,
-        unitPrice: parseFloat(formData.price),
-        stockQuantity: parseInt(formData.stockQuantity),
-        minStockLevel: parseInt(formData.minStockLevel) || 10,
-        supplier: formData.supplier,
-        description: formData.description
-      };
-
-      await sparePartService.createSparePart(newPartData);
-      toast.success('Đã thêm phụ tùng mới thành công!');
-      setShowAddModal(false);
-      resetForm();
-      fetchSpareParts();
-    } catch (error) {
-      console.error('Error adding spare part:', error);
-      toast.error('Không thể thêm phụ tùng');
-    }
-  };
-
-  const handleEditPart = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const updateData = {
-        partName: formData.partName,
-        partNumber: formData.partNumber,
-        category: formData.category,
-        unitPrice: parseFloat(formData.price),
-        stockQuantity: parseInt(formData.stockQuantity),
-        minStockLevel: parseInt(formData.minStockLevel) || 10,
-        supplier: formData.supplier,
-        description: formData.description
-      };
-
-      await sparePartService.updateSparePart(selectedPart.id, updateData);
-      toast.success('Đã cập nhật phụ tùng thành công!');
-      setShowEditModal(false);
-      setSelectedPart(null);
-      resetForm();
-      fetchSpareParts();
-    } catch (error) {
-      console.error('Error updating spare part:', error);
-      toast.error('Không thể cập nhật phụ tùng');
-    }
-  };
-
-  const handleDeletePart = async (partId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa phụ tùng này?')) {
-      return;
-    }
-    
-    try {
-      await sparePartService.deleteSparePart(partId);
-      toast.success('Đã xóa phụ tùng thành công!');
-      fetchSpareParts();
-    } catch (error) {
-      console.error('Error deleting spare part:', error);
-      toast.error('Không thể xóa phụ tùng');
-    }
-  };
-
-  const openEditModal = (part) => {
-    setSelectedPart(part);
-    setFormData({
-      partName: part.partName,
-      partNumber: part.partNumber,
-      category: part.category,
-      price: part.price.toString(),
-      stockQuantity: part.stockQuantity.toString(),
-      minStockLevel: part.minStockLevel.toString(),
-      supplier: part.supplier,
-      description: part.description
-    });
-    setShowEditModal(true);
-  };
-
   const getStatusBadge = (status) => {
     if (status === 'out-of-stock') {
       return <span className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">Hết hàng</span>;
@@ -208,8 +89,8 @@ const StaffSpareParts = () => {
   return (
     <div>
       <div className="mb-6 pb-4 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý phụ tùng</h1>
-        <p className="text-gray-600 mt-1">Quản lý kho phụ tùng xe điện</p>
+        <h1 className="text-2xl font-bold text-gray-900">Phụ tùng</h1>
+        <p className="text-gray-600 mt-1">Xem danh sách phụ tùng trong kho</p>
       </div>
 
       <Card className="mb-6">
@@ -235,14 +116,6 @@ const StaffSpareParts = () => {
                 <option key={cat} value={cat}>{getCategoryName(cat)}</option>
               ))}
             </select>
-            <Button
-              variant="primary"
-              icon={<FiPlus />}
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 whitespace-nowrap"
-            >
-              Thêm phụ tùng
-            </Button>
           </div>
         </Card.Content>
       </Card>
@@ -307,8 +180,8 @@ const StaffSpareParts = () => {
           ) : filteredParts.length === 0 ? (
             <div className="p-12 text-center">
               <FiPackage className="mx-auto text-5xl text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Chưa có phụ tùng</h3>
-              <p className="text-gray-500">Chưa có phụ tùng nào được thêm vào kho</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Không tìm thấy phụ tùng</h3>
+              <p className="text-gray-500">Không có phụ tùng nào phù hợp với tìm kiếm của bạn</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -322,39 +195,22 @@ const StaffSpareParts = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Tồn kho</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Nhà cung cấp</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Trạng thái</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredParts.map((part) => (
                     <tr key={part.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 text-sm font-medium text-gray-900">{part.partNumber || 'N/A'}</td>
-                      <td className="px-4 py-4 text-sm text-gray-900">{part.partName || 'N/A'}</td>
+                      <td className="px-4 py-4 text-sm font-medium text-gray-900">{part.partNumber}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{part.partName}</td>
                       <td className="px-4 py-4 text-sm text-gray-700">{getCategoryName(part.category)}</td>
                       <td className="px-4 py-4 text-sm text-gray-900">{(part.price || 0).toLocaleString('vi-VN')}₫</td>
                       <td className="px-4 py-4 text-sm">
                         <span className={part.stockQuantity <= part.minStockLevel ? 'text-red-600 font-semibold' : 'text-gray-900'}>
-                          {part.stockQuantity || 0}
+                          {part.stockQuantity}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-700">{part.supplier || 'N/A'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-700">{part.supplier}</td>
                       <td className="px-4 py-4">{getStatusBadge(part.status)}</td>
-                      <td className="px-4 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => openEditModal(part)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePart(part.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -363,124 +219,6 @@ const StaffSpareParts = () => {
           )}
         </Card.Content>
       </Card>
-
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">Thêm phụ tùng mới</h3>
-                <button onClick={() => { setShowAddModal(false); resetForm(); }} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <FiX className="text-xl" />
-                </button>
-              </div>
-            </div>
-            <form onSubmit={handleAddPart} className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tên phụ tùng *</label>
-                  <input type="text" name="partName" value={formData.partName} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Mã phụ tùng *</label>
-                  <input type="text" name="partNumber" value={formData.partNumber} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Danh mục *</label>
-                  <select name="category" value={formData.category} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" required>
-                    <option value="">Chọn danh mục</option>
-                    {categories.map(cat => <option key={cat} value={cat}>{getCategoryName(cat)}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Giá (₫) *</label>
-                  <input type="number" name="price" value={formData.price} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" required min="0" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Số lượng *</label>
-                  <input type="number" name="stockQuantity" value={formData.stockQuantity} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" required min="0" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Mức tối thiểu</label>
-                  <input type="number" name="minStockLevel" value={formData.minStockLevel} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" min="0" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">Nhà cung cấp</label>
-                  <input type="text" name="supplier" value={formData.supplier} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">Mô tả</label>
-                  <textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" className="w-full px-3 py-2 border rounded-lg" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => { setShowAddModal(false); resetForm(); }}>Hủy</Button>
-                <Button type="submit" variant="primary" className="bg-blue-600"><FiCheck className="mr-1" />Thêm</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">Chỉnh sửa phụ tùng</h3>
-                <button onClick={() => { setShowEditModal(false); resetForm(); }} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <FiX className="text-xl" />
-                </button>
-              </div>
-            </div>
-            <form onSubmit={handleEditPart} className="p-6">
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Lưu ý:</strong> Chỉ có thể cập nhật số lượng tồn kho và mô tả. Các thông tin khác không thể thay đổi.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-500">Tên phụ tùng</label>
-                  <input type="text" name="partName" value={formData.partName} className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" disabled />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-500">Mã phụ tùng</label>
-                  <input type="text" name="partNumber" value={formData.partNumber} className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" disabled />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-500">Danh mục</label>
-                  <input type="text" value={getCategoryName(formData.category)} className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" disabled />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-500">Giá (₫)</label>
-                  <input type="text" value={formData.price?.toLocaleString('vi-VN')} className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" disabled />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-green-700">Số lượng tồn kho *</label>
-                  <input type="number" name="stockQuantity" value={formData.stockQuantity} onChange={handleInputChange} className="w-full px-3 py-2 border-2 border-green-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required min="0" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-500">Mức tối thiểu</label>
-                  <input type="number" value={formData.minStockLevel} className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" disabled />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1 text-gray-500">Nhà cung cấp</label>
-                  <input type="text" value={formData.supplier} className="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" disabled />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1 text-green-700">Mô tả</label>
-                  <textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" className="w-full px-3 py-2 border-2 border-green-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => { setShowEditModal(false); resetForm(); }}>Hủy</Button>
-                <Button type="submit" variant="primary" className="bg-blue-600"><FiCheck className="mr-1" />Cập nhật</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

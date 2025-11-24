@@ -1,7 +1,7 @@
 package com.swp.evmsystem.service;
 
-import com.swp.evmsystem.dto.PaymentRequestDTO;
-import com.swp.evmsystem.dto.PaymentResponseDTO;
+import com.swp.evmsystem.dto.request.PaymentRequestDTO;
+import com.swp.evmsystem.dto.response.PaymentResponseDTO;
 import com.swp.evmsystem.dto.PaymentStatsDTO;
 import com.swp.evmsystem.enums.PaymentStatus;
 

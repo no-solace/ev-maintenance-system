@@ -2,57 +2,37 @@ package com.swp.evmsystem.service.implement;
 
 import com.swp.evmsystem.dto.response.ApiResponse;
 import com.swp.evmsystem.dto.response.ElectricVehicleDTO;
-import com.swp.evmsystem.dto.response.VehicleHistoryDTO;
+import com.swp.evmsystem.dto.response.OwnerDTO;
 import com.swp.evmsystem.entity.CustomerEntity;
 import com.swp.evmsystem.entity.ElectricVehicleEntity;
-import com.swp.evmsystem.entity.VehicleReceptionEntity;
-import com.swp.evmsystem.enums.EvMaintenanceStatus;
 import com.swp.evmsystem.mapper.ElectricVehicleMapper;
 import com.swp.evmsystem.repository.ElectricVehicleRepository;
-import com.swp.evmsystem.repository.UserRepository;
-import com.swp.evmsystem.repository.VehicleReceptionRepository;
 import com.swp.evmsystem.service.ElectricVehicleService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class ElectricVehicleServiceImpl implements ElectricVehicleService {
-    @Autowired
-    ElectricVehicleRepository electricVehicleRepository;
-    @Autowired
-    ElectricVehicleMapper mapper;
-    @Autowired
-    UserRepository userRepository;
-    @Autowired
-    VehicleReceptionRepository receptionRepository;
+
+    final ElectricVehicleRepository electricVehicleRepository;
+    final ElectricVehicleMapper mapper;
 
     @Override
-    public List<ElectricVehicleDTO> findByCustomerId(Integer customerId) {
-        CustomerEntity customer = (CustomerEntity) userRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-        return electricVehicleRepository.findByOwner(customer)
+    public List<ElectricVehicleDTO> getVehiclesByCustomerId(Integer customerId) {
+        return electricVehicleRepository.findByOwnerId(customerId)
                 .stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }
-
-    @Override
-    public boolean create(ElectricVehicleEntity ev) {
-        return electricVehicleRepository.save(ev) != null;
-    }
-
-    @Override
-    public boolean isEvAvailableForBooking(Integer evId) {
-        return electricVehicleRepository.findById(evId).get().getMaintenanceStatus() == EvMaintenanceStatus.AVAILABLE;
-    }
     
     @Override
-    public ApiResponse<VehicleHistoryDTO> searchVehicle(String licensePlate, String vin) {
+    public ApiResponse<ElectricVehicleDTO> searchVehicle(String licensePlate, String vin) {
         log.info("Searching vehicle - License: '{}', VIN: '{}'", licensePlate, vin);
         
         // Validation: at least one parameter must be provided
@@ -62,7 +42,7 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
             return ApiResponse.error("Vui lòng cung cấp biển số hoặc VIN");
         }
         
-        // Step 1: Find vehicle in xe_dien table
+        // Find vehicle by VIN or license plate
         ElectricVehicleEntity vehicle = null;
         
         if (vin != null && !vin.trim().isEmpty()) {
@@ -80,55 +60,24 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
             return ApiResponse.notFound("Không tìm thấy xe trong hệ thống");
         }
         
-        log.info("Found vehicle: {} (VIN: {})", vehicle.getLicensePlate(), vehicle.getVin());
+        // Convert to DTO with manual owner mapping
+        ElectricVehicleDTO vehicleDTO = mapper.toDTO(vehicle);
         
-        // Step 2: Find reception history for this vehicle
-        List<VehicleReceptionEntity> receptions = receptionRepository.findByLicensePlateIgnoreCase(vehicle.getLicensePlate());
-        log.debug("Found {} reception(s) for this vehicle", receptions.size());
-        
-        // Get customer info from vehicle owner
+        // Manually map owner information
         CustomerEntity owner = vehicle.getOwner();
-        
-        // Get customer address safely
-        String customerAddress = null;
-        if (owner.getAddress() != null) {
-            try {
-                customerAddress = owner.getAddress().toString();
-                log.debug("Customer address retrieved: {}", customerAddress);
-            } catch (Exception e) {
-                log.warn("Error getting customer address: {}", e.getMessage());
-            }
-        } else {
-            log.debug("Customer address is null in database");
+        if (owner != null) {
+            OwnerDTO ownerDTO = OwnerDTO.builder()
+                    .id(owner.getId())
+                    .name(owner.getFullName())
+                    .phone(owner.getPhone())
+                    .email(owner.getEmail())
+                    .address(owner.getAddress() != null ? owner.getAddress().toString() : null)
+                    .build();
+            vehicleDTO.setOwner(ownerDTO);
         }
         
-        // Build history DTO
-        VehicleHistoryDTO.VehicleHistoryDTOBuilder historyBuilder = 
-            VehicleHistoryDTO.builder()
-                .vehicleModel(vehicle.getModel() != null ? vehicle.getModel().getModelName() : "")
-                .licensePlate(vehicle.getLicensePlate())
-                .vin(vehicle.getVin())
-                .customerName(owner.getFullName())
-                .customerPhone(owner.getPhone())
-                .customerEmail(owner.getEmail())
-                .customerAddress(customerAddress)
-                .totalVisits(receptions.size())
-                .isReturningCustomer(receptions.size() > 0);
+        log.info("Successfully found vehicle: {}", vehicle.getLicensePlate());
         
-        // Add last reception info if exists
-        if (!receptions.isEmpty()) {
-            VehicleReceptionEntity lastReception = receptions.get(0);
-            
-            historyBuilder
-                    .lastMileage(lastReception.getMileage())
-                    .lastReceptionId(lastReception.getReceptionId())
-                    .lastVisitDate(lastReception.getCreatedAt())
-                    .lastServices(lastReception.getServices());
-        }
-        
-        VehicleHistoryDTO history = historyBuilder.build();
-        log.info("Successfully built vehicle history for customer: {}", history.getCustomerName());
-        
-        return ApiResponse.success("Tìm thấy thông tin xe", history);
+        return ApiResponse.success("Tìm thấy thông tin xe", vehicleDTO);
     }
 }

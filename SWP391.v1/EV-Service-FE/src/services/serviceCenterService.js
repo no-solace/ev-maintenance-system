@@ -1,13 +1,7 @@
 import api from './api';
 
-/**
- * Service Center API Service
- */
 const serviceCenterService = {
-  /**
-   * Lấy tất cả trung tâm dịch vụ
-   * @returns {Promise<Array>} Danh sách service centers
-   */
+ // Lay danh sach tat ca trung tam dich vu
   getAllCenters: async () => {
     try {
       const response = await api.get('/centers');
@@ -23,12 +17,7 @@ const serviceCenterService = {
       };
     }
   },
-
-  /**
-   * Lấy thông tin trung tâm theo ID
-   * @param {number} centerId - ID của trung tâm
-   * @returns {Promise<Object>} Thông tin trung tâm
-   */
+// Lay chi tiet trung tam dich vu theo id
   getCenterById: async (centerId) => {
     try {
       const response = await api.get(`/centers/${centerId}`);

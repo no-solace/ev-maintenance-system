@@ -23,5 +23,6 @@ public class SparePartResponseDTO {
     String supplier;
     String description;
     Boolean inStock;
-    String status; // "in-stock" or "low"
+    String status; // "in-stock" or "low" (stock status)
+    String partStatus; // "ACTIVE", "DISABLED", "DISCONTINUED" (part lifecycle status)
 }

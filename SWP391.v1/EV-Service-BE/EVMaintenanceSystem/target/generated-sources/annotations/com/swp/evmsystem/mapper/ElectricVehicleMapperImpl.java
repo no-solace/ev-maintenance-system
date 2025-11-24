@@ -4,15 +4,19 @@ import com.swp.evmsystem.dto.response.ElectricVehicleDTO;
 import com.swp.evmsystem.entity.ElectricVehicleEntity;
 import com.swp.evmsystem.enums.EvMaintenanceStatus;
 import javax.annotation.processing.Generated;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-17T18:01:12+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.8 (Microsoft)"
+    date = "2025-11-23T02:08:46+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.9 (Microsoft)"
 )
 @Component
 public class ElectricVehicleMapperImpl implements ElectricVehicleMapper {
+
+    @Autowired
+    private OwnerMapper ownerMapper;
 
     @Override
     public ElectricVehicleDTO toDTO(ElectricVehicleEntity entity) {
@@ -23,15 +27,18 @@ public class ElectricVehicleMapperImpl implements ElectricVehicleMapper {
         ElectricVehicleDTO electricVehicleDTO = new ElectricVehicleDTO();
 
         electricVehicleDTO.setModel( modelToString( entity.getModel() ) );
-        electricVehicleDTO.setHasWarranty( entity.getHasWarranty() );
         electricVehicleDTO.setMaintenanceStatus( statusToString( entity.getMaintenanceStatus() ) );
-        electricVehicleDTO.setId( entity.getId() );
+        electricVehicleDTO.setOwner( ownerMapper.toDTO( entity.getOwner() ) );
+        if ( entity.getId() != null ) {
+            electricVehicleDTO.setId( entity.getId() );
+        }
         electricVehicleDTO.setVin( entity.getVin() );
         electricVehicleDTO.setLicensePlate( entity.getLicensePlate() );
         electricVehicleDTO.setWarrantyStartDate( entity.getWarrantyStartDate() );
         electricVehicleDTO.setWarrantyEndDate( entity.getWarrantyEndDate() );
         electricVehicleDTO.setWarrantyYears( entity.getWarrantyYears() );
         electricVehicleDTO.setPurchaseDate( entity.getPurchaseDate() );
+        electricVehicleDTO.setHasWarranty( entity.getHasWarranty() );
 
         return electricVehicleDTO;
     }
@@ -44,10 +51,10 @@ public class ElectricVehicleMapperImpl implements ElectricVehicleMapper {
 
         ElectricVehicleEntity.ElectricVehicleEntityBuilder electricVehicleEntity = ElectricVehicleEntity.builder();
 
-        electricVehicleEntity.hasWarranty( dto.getHasWarranty() );
         electricVehicleEntity.id( dto.getId() );
         electricVehicleEntity.vin( dto.getVin() );
         electricVehicleEntity.licensePlate( dto.getLicensePlate() );
+        electricVehicleEntity.hasWarranty( dto.getHasWarranty() );
         electricVehicleEntity.warrantyStartDate( dto.getWarrantyStartDate() );
         electricVehicleEntity.warrantyEndDate( dto.getWarrantyEndDate() );
         electricVehicleEntity.warrantyYears( dto.getWarrantyYears() );

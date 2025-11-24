@@ -3,12 +3,13 @@ import { FiUser, FiTruck, FiCheckSquare, FiUserCheck, FiFileText, FiRotateCcw, F
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
-import vehicleReceptionService from '../../services/vehicleReceptionService';
+import receptionService from '../../services/receptionService';
 import bookingService from '../../services/bookingService';
-import evModelService from '../../services/evModelService';
-import { issueService } from '../../services/issueService';
+import vehicleService from '../../services/vehicleService';
 import { maintenancePackageService } from '../../services/maintenancePackageService';
 import { sparePartService } from '../../services/sparePartService';
+import BookingSlotsDisplay from '../../components/reception/BookingSlotsDisplay.jsx';
+import WalkinReceptionsDisplay from '../../components/reception/WalkinReceptionsDisplay.jsx';
 
 const StaffVehicleReception = () => {
   const [formData, setFormData] = useState({
@@ -32,35 +33,63 @@ const StaffVehicleReception = () => {
     
     // Chọn dịch vụ
     selectedOfferTypes: [], // Array of offerTypeIds
-    selectedIssues: [], // Array of issueIds
     selectedPackages: [], // Array of packageIds
     selectedSpareParts: [], // Array of sparePartIds (for replacement service)
     
     // Ghi chú thêm
-    notes: ''
+    notes: '',
+    issueDescription: '' // Mô tả vấn đề khi chọn dịch vụ sửa chữa
   });
 
   const [technicians, setTechnicians] = useState([]);
   const [evModels, setEvModels] = useState([]);
   const [offerTypes, setOfferTypes] = useState([]);
-  const [availableIssues, setAvailableIssues] = useState({}); // { offerTypeId: [issues] }
   const [availablePackages, setAvailablePackages] = useState({}); // { offerTypeId: [packages] }
   const [availableSpareParts, setAvailableSpareParts] = useState([]); // All spare parts from inventory
+  const [bookingSlots, setBookingSlots] = useState(null); // Booking slots for current + next 2 slots
+  const [walkinReceptions, setWalkinReceptions] = useState(null); // Walk-in receptions queue (FIFO)
   const [loading, setLoading] = useState(false);
   const [loadingTechnicians, setLoadingTechnicians] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
   const [loadingOfferTypes, setLoadingOfferTypes] = useState(false);
+  const [loadingBookingSlots, setLoadingBookingSlots] = useState(false);
+  const [loadingWalkin, setLoadingWalkin] = useState(false);
   const [searchingVehicle, setSearchingVehicle] = useState(false);
   const [vehicleFound, setVehicleFound] = useState(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const searchTimeoutRef = useRef(null);
 
-  // Load technicians, EV models, offer types, and spare parts on mount
+  // Restore form data from localStorage on mount
+  useEffect(() => {
+    const savedFormData = localStorage.getItem('receptionFormData');
+    if (savedFormData) {
+      try {
+        const parsed = JSON.parse(savedFormData);
+        setFormData(prev => ({ ...prev, ...parsed }));
+        console.log('✅ Restored form data from localStorage');
+      } catch (error) {
+        console.error('Error restoring form data:', error);
+      }
+    }
+  }, []);
+
+  // Auto-save form data to localStorage whenever it changes
+  useEffect(() => {
+    // Don't save if form is empty
+    if (formData.customerName || formData.licensePlate || formData.selectedPackages.length > 0) {
+      localStorage.setItem('receptionFormData', JSON.stringify(formData));
+    }
+  }, [formData]);
+
+  // Load technicians, EV models, offer types, packages, spare parts, and booking slots on mount
   useEffect(() => {
     loadTechnicians();
     loadEvModels();
     loadOfferTypes();
+    loadPackages();
     loadSpareParts();
+    loadBookingSlots(); // Load booking slots for display
+    loadWalkinQueue(); // Load walk-in receptions queue
     
     // Check if there's booking data from StaffAppointments page
     const bookingDataStr = sessionStorage.getItem('bookingForReception');
@@ -122,7 +151,7 @@ const StaffVehicleReception = () => {
         setTechnicians(formattedTechs);
         
         if (formattedTechs.length === 0) {
-          toast.info('Chưa có kỹ thuật viên nào tại trung tâm của bạn');
+          toast('Chưa có kỹ thuật viên nào tại trung tâm của bạn');
         }
       } else {
         toast.error(result.error || 'Không thể tải danh sách kỹ thuật viên');
@@ -138,7 +167,7 @@ const StaffVehicleReception = () => {
   const loadEvModels = async () => {
     setLoadingModels(true);
     try {
-      const models = await evModelService.getAllModels();
+      const models = await vehicleService.getAllModels();
       setEvModels(models || []);
     } catch (error) {
       console.error('Error loading EV models:', error);
@@ -160,7 +189,7 @@ const StaffVehicleReception = () => {
         setOfferTypes(result.data || []);
         
         if (!result.data || result.data.length === 0) {
-          toast.info('Chưa có loại dịch vụ nào trong hệ thống');
+          toast('Chưa có loại dịch vụ nào trong hệ thống');
         }
       } else {
         console.error('❌ Failed to load offer types:', result.error);
@@ -171,6 +200,99 @@ const StaffVehicleReception = () => {
       toast.error('Lỗi khi tải danh sách loại dịch vụ');
     } finally {
       setLoadingOfferTypes(false);
+    }
+  };
+
+  const loadPackages = async () => {
+    try {
+      console.log('🔄 Loading maintenance packages...');
+      const result = await maintenancePackageService.getAllPackages();
+      
+      if (result.success) {
+        console.log('✅ Packages loaded:', result.data);
+        
+        // Group packages by offerType for UI
+        const groupedPackages = {};
+        if (result.data && Array.isArray(result.data)) {
+          result.data.forEach(pkg => {
+            // Map offerType enum to offerTypeId (1=MAINTENANCE, 2=REPLACEMENT, 3=REPAIR)
+            const offerTypeMap = {
+              'MAINTENANCE': 1,
+              'REPLACEMENT': 2,
+              'REPAIR': 3
+            };
+            const offerTypeId = offerTypeMap[pkg.offerType] || 1;
+            
+            if (!groupedPackages[offerTypeId]) {
+              groupedPackages[offerTypeId] = [];
+            }
+            groupedPackages[offerTypeId].push(pkg);
+          });
+        }
+        
+        setAvailablePackages(groupedPackages);
+        console.log('📦 Grouped packages:', groupedPackages);
+        
+        if (!result.data || result.data.length === 0) {
+          toast('Chưa có gói bảo dưỡng nào trong hệ thống');
+        }
+      } else {
+        console.error('❌ Failed to load packages:', result.error);
+        toast.error(result.error || 'Không thể tải danh sách gói bảo dưỡng');
+      }
+    } catch (error) {
+      console.error('❌ Error loading packages:', error);
+      toast.error('Lỗi khi tải danh sách gói bảo dưỡng');
+    }
+  };
+
+  const loadBookingSlots = async () => {
+    setLoadingBookingSlots(true);
+    try {
+      console.log('🔄 Loading booking slots for my center...');
+      // No need to pass centerId - backend gets it from @AuthenticationPrincipal
+      const result = await bookingService.getMyBookingSlots();
+      
+      console.log('📦 Raw API result:', result);
+      
+      if (result.success) {
+        console.log('✅ Booking slots loaded successfully:', result.data);
+        setBookingSlots(result.data);
+      } else {
+        console.error('❌ Failed to load booking slots:', result.error);
+        toast.error('Không thể tải thông tin booking: ' + result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error loading booking slots:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status
+      });
+      toast.error('Lỗi khi tải thông tin booking');
+    } finally {
+      setLoadingBookingSlots(false);
+    }
+  };
+
+  const loadWalkinQueue = async () => {
+    setLoadingWalkin(true);
+    try {
+      console.log('🚶 Loading walk-in receptions queue...');
+      const result = await receptionService.getWalkinQueue();
+      
+      console.log('📦 Walk-in queue result:', result);
+      
+      if (result.success) {
+        console.log('✅ Walk-in queue loaded:', result.data);
+        setWalkinReceptions(result.data);
+      } else {
+        console.error('❌ Failed to load walk-in queue:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error loading walk-in queue:', error);
+    } finally {
+      setLoadingWalkin(false);
     }
   };
 
@@ -205,7 +327,7 @@ const StaffVehicleReception = () => {
         // Only show toast if explicitly requested (e.g., manual reload)
         if (showToast) {
           if (transformedParts.length === 0) {
-            toast.info('Chưa có phụ tùng nào trong kho');
+            toast('Chưa có phụ tùng nào trong kho');
           } else {
             toast.success(`Đã tải ${transformedParts.length} phụ tùng từ kho`);
           }
@@ -231,37 +353,7 @@ const StaffVehicleReception = () => {
     }
   };
 
-  // Load issues and packages when an offer type is selected
-  const loadServicesForOfferType = async (offerTypeId) => {
-    try {
-      console.log(`🔄 Loading services for offer type ${offerTypeId}...`);
-      
-      // Load issues
-      const issuesResponse = await issueService.getIssuesByOfferType(offerTypeId);
-      console.log(`📋 Issues for offer type ${offerTypeId}:`, issuesResponse);
-      
-      if (issuesResponse.success) {
-        setAvailableIssues(prev => ({
-          ...prev,
-          [offerTypeId]: issuesResponse.data || []
-        }));
-      }
 
-      // Load packages
-      const packagesResponse = await maintenancePackageService.getPackagesByOfferType(offerTypeId);
-      console.log(`📦 Packages for offer type ${offerTypeId}:`, packagesResponse);
-      
-      if (packagesResponse.success) {
-        setAvailablePackages(prev => ({
-          ...prev,
-          [offerTypeId]: packagesResponse.data || []
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading services for offer type:', error);
-      toast.error('Lỗi khi tải dịch vụ');
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -293,26 +385,27 @@ const StaffVehicleReception = () => {
     setVehicleNotFound(false);
 
     try {
-      const result = await vehicleReceptionService.searchVehicleHistory(licensePlate, vin);
+      const result = await vehicleService.searchVehicle(licensePlate, vin);
 
       if (result.success && result.data) {
-        console.log('🔍 Vehicle history found:', result.data);
+        console.log('🔍 Vehicle found:', result.data);
         setVehicleFound(result.data);
         setVehicleNotFound(false);
 
-        // Auto-fill customer and vehicle info
+        // Auto-fill customer and vehicle info from owner object
+        const owner = result.data.owner;
         setFormData(prev => ({
           ...prev,
-          customerName: result.data.customerName || prev.customerName,
-          customerPhone: result.data.customerPhone || prev.customerPhone,
-          customerEmail: result.data.customerEmail || prev.customerEmail,
-          customerAddress: result.data.customerAddress || prev.customerAddress,
-          vehicleModel: result.data.vehicleModel || prev.vehicleModel,
+          customerName: owner?.name || prev.customerName,
+          customerPhone: owner?.phone || prev.customerPhone,
+          customerEmail: owner?.email || prev.customerEmail,
+          customerAddress: owner?.address || prev.customerAddress,
+          vehicleModel: result.data.model || prev.vehicleModel,
           licensePlate: result.data.licensePlate || prev.licensePlate,
           vin: result.data.vin || prev.vin
         }));
 
-        toast.success(`Tìm thấy lịch sử xe! Khách hàng đã đến ${result.data.totalVisits} lần.`);
+        toast.success('Tìm thấy thông tin xe trong hệ thống');
       } else if (result.notFound) {
         console.log('ℹ️ No vehicle history found');
         setVehicleFound(null);
@@ -330,38 +423,32 @@ const StaffVehicleReception = () => {
     
     if (isSelected) {
       // Remove offer type and clear related selections
+      const offerType = offerTypes.find(ot => ot.id === offerTypeId);
+      const offerTypeName = offerType?.name?.toLowerCase() || '';
+      const isRepair = offerTypeName.includes('sửa chữa') || offerTypeName.includes('sửa');
+      
       setFormData(prev => ({
         ...prev,
         selectedOfferTypes: prev.selectedOfferTypes.filter(id => id !== offerTypeId),
-        selectedIssues: prev.selectedIssues.filter(issueId => {
-          const issue = availableIssues[offerTypeId]?.find(i => i.issueId === issueId);
-          return !issue;
-        }),
         selectedPackages: prev.selectedPackages.filter(pkgId => {
           const pkg = availablePackages[offerTypeId]?.find(p => p.packageId === pkgId);
           return !pkg;
         }),
         // Clear spare parts if removing replacement service
-        selectedSpareParts: []
+        selectedSpareParts: [],
+        // Clear issue description if removing repair service
+        issueDescription: isRepair ? '' : prev.issueDescription
       }));
     } else {
-      // Add offer type and load its services
+      // Add offer type
       setFormData(prev => ({
         ...prev,
         selectedOfferTypes: [...prev.selectedOfferTypes, offerTypeId]
       }));
-      loadServicesForOfferType(offerTypeId);
     }
   };
 
-  const handleIssueToggle = (issueId) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedIssues: prev.selectedIssues.includes(issueId)
-        ? prev.selectedIssues.filter(id => id !== issueId)
-        : [...prev.selectedIssues, issueId]
-    }));
-  };
+
 
   const handleSparePartToggle = (sparePartId) => {
     setFormData(prev => ({
@@ -376,22 +463,32 @@ const StaffVehicleReception = () => {
     // Only allow selecting ONE package at a time
     const isCurrentlySelected = formData.selectedPackages.includes(packageId);
     
+    // Find package name for toast message
+    const allPackages = Object.values(availablePackages).flat();
+    const selectedPackage = allPackages.find(p => p.packageId === packageId);
+    const packageName = selectedPackage?.packageName || 'Gói bảo dưỡng';
+    
     if (isCurrentlySelected) {
       // Deselect if clicking the same package
       setFormData(prev => ({
         ...prev,
         selectedPackages: []
       }));
+      toast(`Đã bỏ chọn ${packageName}`);
     } else {
       // Replace with new selection (only one package allowed)
       if (formData.selectedPackages.length > 0) {
-        toast.info('Đã thay đổi gói bảo dưỡng');
+        toast(`Đã thay đổi sang ${packageName}`);
+      } else {
+        toast.success(`Đã chọn ${packageName}`);
       }
       setFormData(prev => ({
         ...prev,
         selectedPackages: [packageId]
       }));
     }
+    
+    console.log('📦 Package toggled:', packageId, 'Current selection:', formData.selectedPackages);
   };
 
   const handleReset = () => {
@@ -407,10 +504,10 @@ const StaffVehicleReception = () => {
       mileage: '',
       technicianId: '',
       selectedOfferTypes: [],
-      selectedIssues: [],
       selectedPackages: [],
       selectedSpareParts: [],
-      notes: ''
+      notes: '',
+      issueDescription: ''
     });
     
     // Clear vehicle found state to unlock fields
@@ -421,6 +518,9 @@ const StaffVehicleReception = () => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
+    
+    // Clear saved form data from localStorage
+    localStorage.removeItem('receptionFormData');
     
     toast.success('Đã làm mới form');
   };
@@ -454,13 +554,32 @@ const StaffVehicleReception = () => {
       }
     }
     
-    if (!formData.technicianId) {
-      toast.error('Vui lòng chọn kỹ thuật viên phụ trách');
+    // Technician is now optional - can be assigned later
+
+    // Check if repair service is selected
+    const hasRepairService = formData.selectedOfferTypes.some(offerTypeId => {
+      const offerType = offerTypes.find(ot => ot.id === offerTypeId);
+      const offerTypeName = offerType?.name?.toLowerCase() || '';
+      return offerTypeName.includes('sửa chữa') || offerTypeName.includes('sửa');
+    });
+
+    // If repair service is selected, issue description must be provided
+    if (hasRepairService && !formData.issueDescription.trim()) {
+      toast.error('Vui lòng mô tả vấn đề kỹ thuật khi chọn dịch vụ sửa chữa');
+      return;
+    }
+
+    // Validate that at least one service is selected
+    const hasSelectedServices = formData.issueDescription.trim() || 
+                                formData.selectedPackages.length > 0 || 
+                                formData.selectedSpareParts?.length > 0;
+    
+    if (!hasSelectedServices) {
+      toast.error('Vui lòng chọn ít nhất một dịch vụ (gói bảo dưỡng, mô tả vấn đề, hoặc phụ tùng)');
       return;
     }
 
     // Prepare data for API with selected services
-    // Note: VIN is only used for search, not stored in reception
     const receptionData = {
       bookingId: formData.bookingId || null,
       customerName: formData.customerName,
@@ -470,19 +589,22 @@ const StaffVehicleReception = () => {
       vehicleModel: formData.vehicleModel,
       licensePlate: formData.licensePlate,
       mileage: formData.mileage ? parseInt(formData.mileage) : null,
-      technicianId: parseInt(formData.technicianId),
-      selectedIssues: formData.selectedIssues.length > 0 ? formData.selectedIssues : null,
-      selectedMaintenancePackages: formData.selectedPackages.length > 0 ? formData.selectedPackages : null,
+      technicianId: formData.technicianId ? parseInt(formData.technicianId) : null,
+      issueDescription: formData.issueDescription.trim() || null, // Issue description for repair service
+      selectedMaintenancePackages: formData.selectedPackages.length > 0 ? formData.selectedPackages[0] : null, // Send single package ID as Integer
       selectedSpareParts: formData.selectedSpareParts?.length > 0 ? formData.selectedSpareParts : null,
       notes: formData.notes || null
     };
 
+    console.log('📤 Sending reception data:', receptionData);
+    console.log('📦 Selected packages:', formData.selectedPackages);
+
     setLoading(true);
     try {
-      const result = await vehicleReceptionService.createReception(receptionData);
+      const result = await receptionService.createReception(receptionData);
       
       if (result.success) {
-        const hasServices = formData.selectedIssues.length > 0 || formData.selectedPackages.length > 0;
+        const hasServices = formData.issueDescription.trim() || formData.selectedPackages.length > 0;
         const message = hasServices 
           ? 'Đã tiếp nhận xe và chọn dịch vụ thành công!'
           : 'Đã tiếp nhận xe thành công! Kỹ thuật viên sẽ kiểm tra và đề xuất dịch vụ.';
@@ -535,7 +657,7 @@ const StaffVehicleReception = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Thông tin khách hàng */}
           <Card className="border border-blue-200">
@@ -588,9 +710,6 @@ const StaffVehicleReception = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Số điện thoại <span className="text-red-500">*</span>
-                    {formData.bookingId && (
-                      <span className="ml-2 text-xs text-gray-500">(từ booking, không thể sửa)</span>
-                    )}
                   </label>
                   <input
                     type="tel"
@@ -598,9 +717,8 @@ const StaffVehicleReception = () => {
                     value={formData.customerPhone}
                     onChange={handleInputChange}
                     placeholder="VD: 0909123456"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
-                    disabled={!!formData.bookingId}
                   />
                 </div>
 
@@ -794,7 +912,7 @@ const StaffVehicleReception = () => {
         {vehicleFound && (
           <div className="mb-6 p-2 bg-green-50 border border-green-600 rounded text-center">
             <p className="text-xs text-green-800">
-              <strong>Chủ xe:</strong> {vehicleFound.customerName} - {vehicleFound.customerPhone} | <strong>Xe:</strong> {vehicleFound.vehicleModel} - {vehicleFound.licensePlate}
+              <strong>Chủ xe:</strong> {vehicleFound.owner?.name} - {vehicleFound.owner?.phone} | <strong>Xe:</strong> {vehicleFound.model} - {vehicleFound.licensePlate}
             </p>
           </div>
         )}
@@ -868,10 +986,9 @@ const StaffVehicleReception = () => {
                   </div>
                 </div>
 
-                {/* Show Issues and Packages for selected Offer Types */}
+                {/* Show Packages and Services for selected Offer Types */}
                 {formData.selectedOfferTypes.map(offerTypeId => {
                   const offerType = offerTypes.find(ot => ot.id === offerTypeId);
-                  const issues = availableIssues[offerTypeId] || [];
                   const packages = availablePackages[offerTypeId] || [];
                   
                   // Determine what to show based on service type
@@ -904,7 +1021,7 @@ const StaffVehicleReception = () => {
                                 📦 Chọn 1 gói bảo dưỡng
                                 <span className="ml-2 text-xs text-blue-600 font-normal">(Chỉ được chọn 1 gói)</span>
                               </label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                 {packages.map(pkg => (
                                   <div
                                     key={pkg.packageId}
@@ -1025,88 +1142,32 @@ const StaffVehicleReception = () => {
                         </>
                       )}
 
-                      {/* Sửa chữa: Hiển thị Issues (triệu chứng) */}
+                      {/* Sửa chữa: Hiển thị textarea để nhập mô tả vấn đề */}
                       {isRepair && (
-                        <>
-
-                          {issues.length > 0 ? (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                ⚠️ Vấn đề kỹ thuật (triệu chứng)
-                              </label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {issues.map(issue => (
-                                  <div
-                                    key={issue.issueId}
-                                    onClick={() => handleIssueToggle(issue.issueId)}
-                                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                                      formData.selectedIssues.includes(issue.issueId)
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-300 hover:border-red-300'
-                                    }`}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={formData.selectedIssues.includes(issue.issueId)}
-                                        onChange={() => {}}
-                                        className="mt-1 w-4 h-4 text-red-600"
-                                      />
-                                      <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-900">{issue.issueName}</p>
-                                        {issue.description && (
-                                          <p className="text-xs text-gray-600 mt-1">{issue.description}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500 italic">Đang tải danh sách vấn đề...</p>
-                          )}
-                        </>
+                        <div className="p-4 bg-red-50 border border-red-300 rounded-lg">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            ⚠️ Mô tả vấn đề kỹ thuật <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            value={formData.issueDescription}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              issueDescription: e.target.value
+                            }))}
+                            placeholder="Vui lòng mô tả chi tiết vấn đề xe đang gặp phải..."
+                            rows="4"
+                            className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                            required
+                          />
+                          <p className="text-xs text-gray-600 mt-1">
+                            Hãy mô tả rõ ràng triệu chứng, âm thanh bất thường, hoặc bất kỳ chi tiết nào giúp kỹ thuật viên chẩn đoán chính xác.
+                          </p>
+                        </div>
                       )}
 
                       {/* Fallback: nếu không match loại nào */}
                       {!isMaintenance && !isReplacement && !isRepair && (
                         <>
-                          {issues.length > 0 && (
-                            <div className="mb-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Vấn đề kỹ thuật
-                              </label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {issues.map(issue => (
-                                  <div
-                                    key={issue.issueId}
-                                    onClick={() => handleIssueToggle(issue.issueId)}
-                                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                                      formData.selectedIssues.includes(issue.issueId)
-                                        ? 'border-green-500 bg-green-50'
-                                        : 'border-gray-300 hover:border-green-300'
-                                    }`}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={formData.selectedIssues.includes(issue.issueId)}
-                                        onChange={() => {}}
-                                        className="mt-1 w-4 h-4 text-green-600"
-                                      />
-                                      <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-900">{issue.issueName}</p>
-                                        {issue.description && (
-                                          <p className="text-xs text-gray-600 mt-1">{issue.description}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                           {packages.length > 0 && (
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1161,12 +1222,24 @@ const StaffVehicleReception = () => {
           </Card.Content>
         </Card>
 
+        {/* Hiển thị booking slots */}
+        <BookingSlotsDisplay 
+          bookingSlots={bookingSlots} 
+          loading={loadingBookingSlots} 
+        />
+
+        {/* Hiển thị walk-in receptions queue */}
+        <WalkinReceptionsDisplay 
+          receptions={walkinReceptions} 
+          loading={loadingWalkin} 
+        />
+
         {/* Chọn kỹ thuật viên phụ trách */}
         <Card className="border border-blue-200 mb-6">
           <Card.Content className="p-6">
             <h2 className="text-lg font-semibold text-blue-700 mb-4 flex items-center gap-2">
               <FiUserCheck />
-              Chọn kỹ thuật viên phụ trách <span className="text-red-500">*</span>
+              Chọn kỹ thuật viên phụ trách <span className="text-gray-400 text-sm">(Tùy chọn)</span>
             </h2>
             
 
@@ -1176,7 +1249,6 @@ const StaffVehicleReception = () => {
               value={formData.technicianId}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
             >
               <option value="">-- Chọn kỹ thuật viên --</option>
               {loadingTechnicians ? (
