@@ -4,6 +4,7 @@ import com.swp.evmsystem.service.VNPayService;
 import com.swp.evmsystem.service.PaymentService;
 import com.swp.evmsystem.service.BookingService;
 import com.swp.evmsystem.dto.response.PaymentResponseDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,16 +21,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/vnpay")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class VNPayController {
 
-    @Autowired
-    private VNPayService vnPayService;
-    
-    @Autowired
-    private PaymentService paymentService;
-    
-    @Autowired
-    private BookingService bookingService;
+    final private VNPayService vnPayService;
+    final private PaymentService paymentService;
+    final private BookingService bookingService;
 
     @PostMapping("/create-payment-url")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF', 'ADMIN')")

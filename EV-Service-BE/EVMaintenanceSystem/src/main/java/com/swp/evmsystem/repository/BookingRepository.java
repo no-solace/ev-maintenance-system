@@ -1,7 +1,7 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.BookingEntity;
-import com.swp.evmsystem.entity.ServiceCenterEntity;
+import com.swp.evmsystem.model.BookingEntity;
+import com.swp.evmsystem.model.ServiceCenterEntity;
 import com.swp.evmsystem.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

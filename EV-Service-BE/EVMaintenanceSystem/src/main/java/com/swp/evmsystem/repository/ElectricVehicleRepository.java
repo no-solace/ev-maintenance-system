@@ -1,7 +1,7 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.CustomerEntity;
-import com.swp.evmsystem.entity.ElectricVehicleEntity;
+import com.swp.evmsystem.model.CustomerEntity;
+import com.swp.evmsystem.model.ElectricVehicleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

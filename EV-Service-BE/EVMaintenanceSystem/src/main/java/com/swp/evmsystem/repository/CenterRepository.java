@@ -1,6 +1,6 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.ServiceCenterEntity;
+import com.swp.evmsystem.model.ServiceCenterEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

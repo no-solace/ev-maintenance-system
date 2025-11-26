@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.entity.MaintenancePackageEntity;
+import com.swp.evmsystem.model.MaintenancePackageEntity;
 import com.swp.evmsystem.repository.MaintenancePackageRepository;
 import com.swp.evmsystem.service.MaintenancePackageService;
 import lombok.RequiredArgsConstructor;

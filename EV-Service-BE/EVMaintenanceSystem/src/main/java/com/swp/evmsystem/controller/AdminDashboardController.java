@@ -25,8 +25,6 @@ public class AdminDashboardController {
     @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminDashboardStatsDTO>> getDashboardStats() {
-        log.info("📊 Admin dashboard stats requested");
-        
         try {
             AdminDashboardStatsDTO stats = adminDashboardService.getDashboardStats();
             

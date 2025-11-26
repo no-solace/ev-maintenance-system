@@ -22,6 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 public class PaymentController {
+
     final private PaymentService paymentService;
 
     @PostMapping

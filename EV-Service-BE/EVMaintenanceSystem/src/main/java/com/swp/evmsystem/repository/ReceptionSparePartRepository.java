@@ -1,6 +1,6 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.ReceptionSparePartEntity;
+import com.swp.evmsystem.model.ReceptionSparePartEntity;
 import com.swp.evmsystem.enums.SparePartRequestStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

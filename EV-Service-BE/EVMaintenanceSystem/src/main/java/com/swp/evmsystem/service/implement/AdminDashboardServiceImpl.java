@@ -1,11 +1,10 @@
 package com.swp.evmsystem.service.implement;
 
 import com.swp.evmsystem.dto.response.AdminDashboardStatsDTO;
-import com.swp.evmsystem.entity.BookingEntity;
-import com.swp.evmsystem.entity.EmployeeEntity;
-import com.swp.evmsystem.entity.PaymentEntity;
-import com.swp.evmsystem.entity.ServiceCenterEntity;
-import com.swp.evmsystem.entity.VehicleReceptionEntity;
+import com.swp.evmsystem.model.BookingEntity;
+import com.swp.evmsystem.model.EmployeeEntity;
+import com.swp.evmsystem.model.PaymentEntity;
+import com.swp.evmsystem.model.ServiceCenterEntity;
 import com.swp.evmsystem.enums.BookingStatus;
 import com.swp.evmsystem.enums.PaymentStatus;
 import com.swp.evmsystem.enums.Role;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;

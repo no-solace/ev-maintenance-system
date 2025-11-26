@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service;
 
-import com.swp.evmsystem.entity.BookingEntity;
+import com.swp.evmsystem.model.BookingEntity;
 import jakarta.mail.MessagingException;
 
 public interface EmailService {

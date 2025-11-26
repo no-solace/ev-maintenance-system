@@ -1,7 +1,7 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.DistrictEntity;
-import com.swp.evmsystem.entity.WardEntity;
+import com.swp.evmsystem.model.DistrictEntity;
+import com.swp.evmsystem.model.WardEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

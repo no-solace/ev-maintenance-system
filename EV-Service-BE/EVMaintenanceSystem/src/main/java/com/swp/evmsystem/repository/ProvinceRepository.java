@@ -1,6 +1,6 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.ProvinceEntity;
+import com.swp.evmsystem.model.ProvinceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

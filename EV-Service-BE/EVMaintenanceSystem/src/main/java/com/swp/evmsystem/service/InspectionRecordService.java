@@ -2,8 +2,8 @@ package com.swp.evmsystem.service;
 
 import com.swp.evmsystem.dto.request.BatchUpdateInspectionRequest;
 import com.swp.evmsystem.dto.response.InspectionRecordResponse;
-import com.swp.evmsystem.entity.InspectionRecordEntity;
-import com.swp.evmsystem.entity.VehicleReceptionEntity;
+import com.swp.evmsystem.model.InspectionRecordEntity;
+import com.swp.evmsystem.model.VehicleReceptionEntity;
 
 import java.util.List;
 

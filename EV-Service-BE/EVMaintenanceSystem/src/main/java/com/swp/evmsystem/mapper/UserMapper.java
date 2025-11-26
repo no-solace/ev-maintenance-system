@@ -1,9 +1,9 @@
 package com.swp.evmsystem.mapper;
 
 import com.swp.evmsystem.dto.response.UserDTO;
-import com.swp.evmsystem.entity.CustomerEntity;
-import com.swp.evmsystem.entity.EmployeeEntity;
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.CustomerEntity;
+import com.swp.evmsystem.model.EmployeeEntity;
+import com.swp.evmsystem.model.UserEntity;
 import com.swp.evmsystem.enums.Role;
 import org.springframework.stereotype.Component;
 

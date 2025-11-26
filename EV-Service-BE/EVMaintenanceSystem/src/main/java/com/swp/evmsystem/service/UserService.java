@@ -2,7 +2,7 @@ package com.swp.evmsystem.service;
 
 import com.swp.evmsystem.dto.response.CustomerDTO;
 import com.swp.evmsystem.dto.response.UserDTO;
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.UserEntity;
 import com.swp.evmsystem.security.UserEntityDetails;
 
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.EmployeeEntity;
-import com.swp.evmsystem.entity.VehicleReceptionEntity;
+import com.swp.evmsystem.model.EmployeeEntity;
+import com.swp.evmsystem.model.VehicleReceptionEntity;
 import com.swp.evmsystem.enums.ReceptionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

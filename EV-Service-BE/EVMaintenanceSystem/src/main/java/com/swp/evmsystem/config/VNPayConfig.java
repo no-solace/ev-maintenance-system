@@ -1,5 +1,6 @@
 package com.swp.evmsystem.config;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+@Getter
 @Configuration
 public class VNPayConfig {
     
@@ -34,30 +36,6 @@ public class VNPayConfig {
 
     @Value("${vnpay.api-url:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}")
     private String vnpApiUrl;
-
-    public String getVnpPayUrl() {
-        return vnpPayUrl;
-    }
-
-    public String getVnpReturnUrl() {
-        return vnpReturnUrl;
-    }
-    
-    public String getVnpStaffReturnUrl() {
-        return vnpStaffReturnUrl;
-    }
-
-    public String getVnpTmnCode() {
-        return vnpTmnCode;
-    }
-
-    public String getVnpHashSecret() {
-        return vnpHashSecret;
-    }
-
-    public String getVnpApiUrl() {
-        return vnpApiUrl;
-    }
 
     public String hmacSHA512(String key, String data) {
         try {

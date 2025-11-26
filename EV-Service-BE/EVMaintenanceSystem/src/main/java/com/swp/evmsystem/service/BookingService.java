@@ -5,7 +5,7 @@ import com.swp.evmsystem.dto.response.BookingResponseDTO;
 import com.swp.evmsystem.dto.response.BookingStatsDTO;
 import com.swp.evmsystem.dto.response.CenterBookingSlotsDTO;
 import com.swp.evmsystem.dto.response.TimeSlotResponseDTO;
-import com.swp.evmsystem.entity.BookingEntity;
+import com.swp.evmsystem.model.BookingEntity;
 import com.swp.evmsystem.enums.BookingStatus;
 import com.swp.evmsystem.security.UserEntityDetails;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -3,7 +3,7 @@ package com.swp.evmsystem.service;
 import com.swp.evmsystem.dto.request.SparePartRequestDTO;
 import com.swp.evmsystem.dto.response.SparePartResponseDTO;
 import com.swp.evmsystem.dto.response.SparePartStatsDTO;
-import com.swp.evmsystem.entity.SparePartEntity;
+import com.swp.evmsystem.model.SparePartEntity;
 
 import java.util.List;
 

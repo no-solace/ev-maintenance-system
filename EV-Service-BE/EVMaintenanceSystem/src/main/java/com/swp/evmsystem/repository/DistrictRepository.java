@@ -1,6 +1,6 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.DistrictEntity;
+import com.swp.evmsystem.model.DistrictEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

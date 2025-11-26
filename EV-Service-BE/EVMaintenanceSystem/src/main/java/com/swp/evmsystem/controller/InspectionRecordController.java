@@ -2,7 +2,7 @@ package com.swp.evmsystem.controller;
 
 import com.swp.evmsystem.dto.request.BatchUpdateInspectionRequest;
 import com.swp.evmsystem.dto.response.InspectionRecordResponse;
-import com.swp.evmsystem.entity.InspectionRecordEntity;
+import com.swp.evmsystem.model.InspectionRecordEntity;
 import com.swp.evmsystem.service.InspectionRecordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -3,7 +3,7 @@ package com.swp.evmsystem.service.implement;
 import com.swp.evmsystem.dto.request.VehicleReceptionRequest;
 import com.swp.evmsystem.dto.response.OfferTypeDTO;
 import com.swp.evmsystem.dto.response.VehicleReceptionResponseDTO;
-import com.swp.evmsystem.entity.*;
+import com.swp.evmsystem.model.*;
 import com.swp.evmsystem.enums.*;
 import com.swp.evmsystem.exception.BusinessException;
 import com.swp.evmsystem.exception.ResourceNotFoundException;
@@ -291,7 +291,7 @@ public class VehicleReceptionServiceImpl implements VehicleReceptionService {
             }
 
             // Create spare part request with default quantity = 1
-            com.swp.evmsystem.entity.ReceptionSparePartEntity sparePartRequest = com.swp.evmsystem.entity.ReceptionSparePartEntity.builder()
+            com.swp.evmsystem.model.ReceptionSparePartEntity sparePartRequest = com.swp.evmsystem.model.ReceptionSparePartEntity.builder()
                     .reception(reception)
                     .sparePart(part)
                     .quantity(1)

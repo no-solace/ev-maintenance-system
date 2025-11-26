@@ -2,16 +2,14 @@ package com.swp.evmsystem.service.implement;
 
 import com.swp.evmsystem.dto.AdminAnalyticsDTO;
 import com.swp.evmsystem.dto.response.AdminAnalyticsTimeRangeDTO;
-import com.swp.evmsystem.entity.*;
+import com.swp.evmsystem.model.*;
 import com.swp.evmsystem.enums.BookingStatus;
 import com.swp.evmsystem.enums.PaymentStatus;
-import com.swp.evmsystem.enums.ReceptionStatus;
 import com.swp.evmsystem.repository.*;
 import com.swp.evmsystem.service.AdminAnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;

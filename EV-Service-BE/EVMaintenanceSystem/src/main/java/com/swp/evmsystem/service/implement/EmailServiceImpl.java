@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.entity.BookingEntity;
+import com.swp.evmsystem.model.BookingEntity;
 import com.swp.evmsystem.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -11,8 +11,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 @Service

@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service;
 
-import com.swp.evmsystem.entity.InspectionTaskEntity;
+import com.swp.evmsystem.model.InspectionTaskEntity;
 import com.swp.evmsystem.enums.PackageLevel;
 
 import java.util.List;

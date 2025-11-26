@@ -1,10 +1,10 @@
 package com.swp.evmsystem.service.implement;
 
 import com.swp.evmsystem.dto.response.InspectionRecordResponse;
-import com.swp.evmsystem.entity.InspectionRecordEntity;
-import com.swp.evmsystem.entity.InspectionTaskEntity;
-import com.swp.evmsystem.entity.MaintenancePackageEntity;
-import com.swp.evmsystem.entity.VehicleReceptionEntity;
+import com.swp.evmsystem.model.InspectionRecordEntity;
+import com.swp.evmsystem.model.InspectionTaskEntity;
+import com.swp.evmsystem.model.MaintenancePackageEntity;
+import com.swp.evmsystem.model.VehicleReceptionEntity;
 import com.swp.evmsystem.enums.InspectionStatus;
 import com.swp.evmsystem.enums.KmInterval;
 import com.swp.evmsystem.enums.PackageLevel;

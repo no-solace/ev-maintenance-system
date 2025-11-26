@@ -1,6 +1,6 @@
 package com.swp.evmsystem.security;
 
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.UserEntity;
 import com.swp.evmsystem.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

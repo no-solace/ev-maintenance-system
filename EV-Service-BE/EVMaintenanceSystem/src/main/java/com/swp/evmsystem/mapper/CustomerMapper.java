@@ -1,8 +1,8 @@
 package com.swp.evmsystem.mapper;
 
 import com.swp.evmsystem.dto.response.CustomerDTO;
-import com.swp.evmsystem.entity.AddressEntity;
-import com.swp.evmsystem.entity.CustomerEntity;
+import com.swp.evmsystem.model.AddressEntity;
+import com.swp.evmsystem.model.CustomerEntity;
 import com.swp.evmsystem.enums.UserStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

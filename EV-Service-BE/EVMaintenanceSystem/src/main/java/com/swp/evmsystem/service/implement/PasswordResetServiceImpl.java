@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.UserEntity;
 import com.swp.evmsystem.repository.UserRepository;
 import com.swp.evmsystem.service.EmailService;
 import com.swp.evmsystem.service.PasswordResetService;

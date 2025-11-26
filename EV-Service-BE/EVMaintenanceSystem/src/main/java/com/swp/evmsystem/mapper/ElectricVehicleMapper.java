@@ -1,7 +1,7 @@
 package com.swp.evmsystem.mapper;
 
 import com.swp.evmsystem.dto.response.ElectricVehicleDTO;
-import com.swp.evmsystem.entity.ElectricVehicleEntity;
+import com.swp.evmsystem.model.ElectricVehicleEntity;
 import com.swp.evmsystem.enums.EvMaintenanceStatus;
 import com.swp.evmsystem.enums.VehicleModel;
 import org.mapstruct.Mapper;

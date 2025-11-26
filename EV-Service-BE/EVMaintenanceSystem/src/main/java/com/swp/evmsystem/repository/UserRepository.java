@@ -1,8 +1,8 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.CustomerEntity;
-import com.swp.evmsystem.entity.EmployeeEntity;
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.CustomerEntity;
+import com.swp.evmsystem.model.EmployeeEntity;
+import com.swp.evmsystem.model.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

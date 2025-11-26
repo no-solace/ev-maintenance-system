@@ -1,5 +1,6 @@
 package com.swp.evmsystem.controller;
 
+import com.swp.evmsystem.constants.BookingConstants;
 import com.swp.evmsystem.dto.request.BookingRequest;
 import com.swp.evmsystem.dto.response.BookingResponseDTO;
 import com.swp.evmsystem.dto.response.BookingStatsDTO;
@@ -8,6 +9,7 @@ import com.swp.evmsystem.dto.response.TimeSlotResponseDTO;
 import com.swp.evmsystem.enums.BookingStatus;
 import com.swp.evmsystem.security.UserEntityDetails;
 import com.swp.evmsystem.service.BookingService;
+import com.swp.evmsystem.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +20,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class BookingController {
     
     private final BookingService bookingService;
+    final private PaymentService paymentService;
 
     /**
      * Tạo booking
@@ -188,5 +193,22 @@ public class BookingController {
         log.info("✅ Returning booking slots with {} total bookings", slots.getTotalTodayBookings());
         
         return ResponseEntity.ok(slots);
+    }
+
+    @PostMapping("/{bookingId}/create-deposit-payment")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> createDepositPayment(@PathVariable Integer bookingId) {
+        Map<String, Object> response = paymentService.createBookingDepositPayment(bookingId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/deposit-policy")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> getDepositPolicy() {
+        return ResponseEntity.ok(java.util.Map.of(
+                "depositAmount", BookingConstants.DEPOSIT_AMOUNT,
+                "holdTimeMinutes", BookingConstants.HOLD_TIME_MINUTES,
+                "policy", BookingConstants.DEPOSIT_POLICY
+        ));
     }
 }

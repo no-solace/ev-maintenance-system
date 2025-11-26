@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.entity.AddressEntity;
+import com.swp.evmsystem.model.AddressEntity;
 import com.swp.evmsystem.repository.AddressRepository;
 import com.swp.evmsystem.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;

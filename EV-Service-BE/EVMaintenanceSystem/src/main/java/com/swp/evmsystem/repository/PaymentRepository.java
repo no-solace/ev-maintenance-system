@@ -1,6 +1,6 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.PaymentEntity;
+import com.swp.evmsystem.model.PaymentEntity;
 import com.swp.evmsystem.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

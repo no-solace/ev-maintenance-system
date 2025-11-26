@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service;
 
-import com.swp.evmsystem.entity.DistrictEntity;
+import com.swp.evmsystem.model.DistrictEntity;
 
 public interface DistrictService {
 

@@ -1,7 +1,7 @@
 package com.swp.evmsystem.security;
 
-import com.swp.evmsystem.entity.EmployeeEntity;
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.EmployeeEntity;
+import com.swp.evmsystem.model.UserEntity;
 import com.swp.evmsystem.enums.Role;
 import com.swp.evmsystem.enums.UserStatus;
 import org.springframework.security.core.GrantedAuthority;

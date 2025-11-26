@@ -1,7 +1,7 @@
 package com.swp.evmsystem.service;
 
-import com.swp.evmsystem.entity.DistrictEntity;
-import com.swp.evmsystem.entity.WardEntity;
+import com.swp.evmsystem.model.DistrictEntity;
+import com.swp.evmsystem.model.WardEntity;
 
 public interface WardService {
     void createWard(WardEntity wardEntity);

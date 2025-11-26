@@ -1,6 +1,6 @@
 package com.swp.evmsystem.repository;
 
-import com.swp.evmsystem.entity.InspectionTaskEntity;
+import com.swp.evmsystem.model.InspectionTaskEntity;
 import com.swp.evmsystem.enums.KmInterval;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

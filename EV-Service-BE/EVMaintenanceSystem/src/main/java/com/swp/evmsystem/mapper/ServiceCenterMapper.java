@@ -1,8 +1,8 @@
 package com.swp.evmsystem.mapper;
 
 import com.swp.evmsystem.dto.response.ServiceCenterDTO;
-import com.swp.evmsystem.entity.ServiceCenterEntity;
-import com.swp.evmsystem.entity.AddressEntity;
+import com.swp.evmsystem.model.ServiceCenterEntity;
+import com.swp.evmsystem.model.AddressEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

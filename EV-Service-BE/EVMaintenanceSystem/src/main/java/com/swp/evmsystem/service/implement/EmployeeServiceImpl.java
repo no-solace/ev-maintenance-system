@@ -1,7 +1,7 @@
 package com.swp.evmsystem.service.implement;
 
 import com.swp.evmsystem.dto.response.EmployeeResponseDTO;
-import com.swp.evmsystem.entity.EmployeeEntity;
+import com.swp.evmsystem.model.EmployeeEntity;
 import com.swp.evmsystem.exception.ResourceNotFoundException;
 import com.swp.evmsystem.repository.EmployeeRepository;
 import com.swp.evmsystem.service.EmployeeService;

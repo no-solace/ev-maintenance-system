@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service;
 
-import com.swp.evmsystem.entity.AddressEntity;
+import com.swp.evmsystem.model.AddressEntity;
 
 public interface AddressService {
 

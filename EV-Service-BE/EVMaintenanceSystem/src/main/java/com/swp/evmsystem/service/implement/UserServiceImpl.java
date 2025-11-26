@@ -2,7 +2,7 @@ package com.swp.evmsystem.service.implement;
 
 import com.swp.evmsystem.dto.response.CustomerDTO;
 import com.swp.evmsystem.dto.response.UserDTO;
-import com.swp.evmsystem.entity.UserEntity;
+import com.swp.evmsystem.model.UserEntity;
 import com.swp.evmsystem.mapper.CustomerMapper;
 import com.swp.evmsystem.mapper.UserMapper;
 import com.swp.evmsystem.repository.UserRepository;

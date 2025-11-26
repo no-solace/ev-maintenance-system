@@ -1,6 +1,6 @@
 package com.swp.evmsystem.service.implement;
 
-import com.swp.evmsystem.entity.DistrictEntity;
+import com.swp.evmsystem.model.DistrictEntity;
 import com.swp.evmsystem.repository.DistrictRepository;
 import com.swp.evmsystem.service.DistrictService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package com.swp.evmsystem.entity;
+package com.swp.evmsystem.model;
 
 import com.swp.evmsystem.enums.ReceptionStatus;
 import jakarta.persistence.*;

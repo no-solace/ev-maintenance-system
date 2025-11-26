@@ -5,7 +5,7 @@ import com.swp.evmsystem.dto.response.ElectricVehicleDTO;
 import com.swp.evmsystem.dto.response.EvModelDTO;
 import com.swp.evmsystem.enums.VehicleModel;
 import com.swp.evmsystem.service.ElectricVehicleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +19,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
-public class ElectricVehicleController {
-    @Autowired
-    private ElectricVehicleService electricVehicleService;
+@RequiredArgsConstructor
+public class VehicleController {
+
+    final private ElectricVehicleService electricVehicleService;
 
     @GetMapping("/vehicles/search")
     @PreAuthorize("hasAnyRole('STAFF', 'MANAGER')")

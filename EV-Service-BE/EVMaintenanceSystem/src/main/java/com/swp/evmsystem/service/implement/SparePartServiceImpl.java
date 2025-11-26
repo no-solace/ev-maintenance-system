@@ -3,7 +3,7 @@ package com.swp.evmsystem.service.implement;
 import com.swp.evmsystem.dto.request.SparePartRequestDTO;
 import com.swp.evmsystem.dto.response.SparePartResponseDTO;
 import com.swp.evmsystem.dto.response.SparePartStatsDTO;
-import com.swp.evmsystem.entity.SparePartEntity;
+import com.swp.evmsystem.model.SparePartEntity;
 import com.swp.evmsystem.enums.OfferType;
 import com.swp.evmsystem.enums.SparePartStatus;
 import com.swp.evmsystem.exception.BusinessException;
@@ -196,7 +196,7 @@ public class SparePartServiceImpl implements SparePartService {
         Integer targetCenterId = determineCenterId(request.getCenterId(), userCenterId);
         
         // Fetch center entity if centerId is provided
-        com.swp.evmsystem.entity.ServiceCenterEntity center = null;
+        com.swp.evmsystem.model.ServiceCenterEntity center = null;
         if (targetCenterId != null) {
             center = centerRepository.findById(targetCenterId)
                     .orElseThrow(() -> new ResourceNotFoundException("Service center not found with ID: " + targetCenterId));

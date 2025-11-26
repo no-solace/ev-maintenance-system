@@ -1,6 +1,6 @@
 package com.swp.evmsystem.config;
 
-import com.swp.evmsystem.entity.*;
+import com.swp.evmsystem.model.*;
 import com.swp.evmsystem.enums.*;
 import com.swp.evmsystem.repository.*;
 import lombok.AccessLevel;
