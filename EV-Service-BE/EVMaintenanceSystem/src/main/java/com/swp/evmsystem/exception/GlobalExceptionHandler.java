@@ -55,16 +55,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private Map<String, Object> buildError(HttpStatus status, Object message) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("title", status.getReasonPhrase());
-        body.put("status", status.value());
-        body.put("message", message);
-        body.put("timestamp", LocalDateTime.now());
-
-        return body;
-    }
-
     @ExceptionHandler(HttpClientErrorException.Forbidden.class)
     public ResponseEntity<?> handle403(HttpClientErrorException.Forbidden ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -99,5 +89,15 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(status).body(error);
+    }
+
+    private Map<String, Object> buildError(HttpStatus status, Object message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("title", status.getReasonPhrase());
+        body.put("status", status.value());
+        body.put("message", message);
+        body.put("timestamp", LocalDateTime.now());
+
+        return body;
     }
 }
