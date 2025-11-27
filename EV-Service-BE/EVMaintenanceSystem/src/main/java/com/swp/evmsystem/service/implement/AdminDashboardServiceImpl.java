@@ -13,7 +13,7 @@ import com.swp.evmsystem.repository.BookingRepository;
 import com.swp.evmsystem.repository.CenterRepository;
 import com.swp.evmsystem.repository.PaymentRepository;
 import com.swp.evmsystem.repository.UserRepository;
-import com.swp.evmsystem.repository.VehicleReceptionRepository;
+import com.swp.evmsystem.repository.ReceptionRepository;
 import com.swp.evmsystem.service.AdminDashboardService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     UserRepository userRepository;
     PaymentRepository paymentRepository;
     CenterRepository centerRepository;
-    VehicleReceptionRepository receptionRepository;
+    ReceptionRepository receptionRepository;
     
     @Override
     public AdminDashboardStatsDTO getDashboardStats() {

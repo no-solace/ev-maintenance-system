@@ -8,7 +8,7 @@ import com.swp.evmsystem.security.UserEntityDetails;
 import com.swp.evmsystem.service.BookingService;
 import com.swp.evmsystem.service.CustomerService;
 import com.swp.evmsystem.service.ElectricVehicleService;
-import com.swp.evmsystem.service.VehicleReceptionService;
+import com.swp.evmsystem.service.ReceptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +27,7 @@ public class CustomerController {
     private final CustomerService customerService;
     private final BookingService bookingService;
     private final ElectricVehicleService electricVehicleService;
-    private final VehicleReceptionService vehicleReceptionService;
+    private final ReceptionService receptionService;
 
     /**
      * Get all customers
@@ -70,7 +70,7 @@ public class CustomerController {
     public ResponseEntity<List<VehicleReceptionResponseDTO>> getMyReceptions(
             @AuthenticationPrincipal UserEntityDetails userDetails) {
         List<VehicleReceptionResponseDTO> receptions =
-            vehicleReceptionService.getReceptionsByCustomerId(userDetails.userEntity().getId());
+            receptionService.getReceptionsByCustomerId(userDetails.userEntity().getId());
         return ResponseEntity.ok(receptions);
     }
 }

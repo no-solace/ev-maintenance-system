@@ -37,7 +37,7 @@ public class BookingEntity {
 
     @ManyToOne
     @JoinColumn(name = "vehicle_id", referencedColumnName = "vehicle_id", nullable = false)
-    ElectricVehicleEntity vehicle;
+    VehicleEntity vehicle;
 
     @ManyToOne
     @JoinColumn(name = "center_id", referencedColumnName = "center_id", nullable = false)

@@ -32,12 +32,12 @@ public class CustomerEntity extends UserEntity {
     LocalDate dob;
     @JsonIgnore
     @OneToMany(mappedBy = "owner" , fetch = FetchType.LAZY)
-    List<ElectricVehicleEntity> vehicles = new ArrayList<>();
+    List<VehicleEntity> vehicles = new ArrayList<>();
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
     AddressEntity address;
 
-    public void addVehicle(ElectricVehicleEntity ev) {
+    public void addVehicle(VehicleEntity ev) {
         this.vehicles.add(ev);
         ev.setOwner(this);
     }

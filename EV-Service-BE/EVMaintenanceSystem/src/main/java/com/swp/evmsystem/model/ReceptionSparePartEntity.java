@@ -24,7 +24,7 @@ public class ReceptionSparePartEntity {
     
     @ManyToOne
     @JoinColumn(name = "reception_id", nullable = false)
-    VehicleReceptionEntity reception;
+    ReceptionEntity reception;
     
     @ManyToOne
     @JoinColumn(name = "spare_part_id", nullable = false)

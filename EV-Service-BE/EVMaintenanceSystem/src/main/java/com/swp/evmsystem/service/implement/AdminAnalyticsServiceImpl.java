@@ -7,7 +7,7 @@ import com.swp.evmsystem.enums.BookingStatus;
 import com.swp.evmsystem.enums.PaymentStatus;
 import com.swp.evmsystem.repository.*;
 import com.swp.evmsystem.service.AdminAnalyticsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,19 +16,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
-    
-    @Autowired
-    private PaymentRepository paymentRepository;
-    
-    @Autowired
-    private BookingRepository bookingRepository;
-    
-    @Autowired
-    private VehicleReceptionRepository receptionRepository;
-    
-    @Autowired
-    private UserRepository userRepository;
+
+    final private PaymentRepository paymentRepository;
+    final private BookingRepository bookingRepository;
+    final private ReceptionRepository receptionRepository;
+    final private UserRepository userRepository;
     
     /**
      * Get analytics by period type
@@ -211,7 +205,7 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
             
             if ("TECHNICIAN".equalsIgnoreCase(employee.getRole().name())) {
                 // Count receptions assigned to technician
-                List<VehicleReceptionEntity> receptions = receptionRepository.findByAssignedTechnician_Id(employee.getId());
+                List<ReceptionEntity> receptions = receptionRepository.findByAssignedTechnician_Id(employee.getId());
                 tasksCompleted = receptions.stream()
                         .filter(r -> r.getCreatedAt().isAfter(startDate) && r.getCreatedAt().isBefore(endDate))
                         .count();
@@ -219,11 +213,11 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
                 // Calculate revenue from receptions
                 revenueGenerated = receptions.stream()
                         .filter(r -> r.getCreatedAt().isAfter(startDate) && r.getCreatedAt().isBefore(endDate))
-                        .mapToDouble(VehicleReceptionEntity::getTotalCost)
+                        .mapToDouble(ReceptionEntity::getTotalCost)
                         .sum();
             } else if ("STAFF".equalsIgnoreCase(employee.getRole().name())) {
                 // Count receptions handled
-                List<VehicleReceptionEntity> receptions = receptionRepository.findByAssignedTechnician_Id(employee.getId());
+                List<ReceptionEntity> receptions = receptionRepository.findByAssignedTechnician_Id(employee.getId());
                 tasksCompleted = receptions.stream()
                         .filter(r -> r.getCreatedAt().isAfter(startDate) && r.getCreatedAt().isBefore(endDate))
                         .count();
@@ -231,7 +225,7 @@ public class AdminAnalyticsServiceImpl implements AdminAnalyticsService {
                 // Calculate revenue from receptions
                 revenueGenerated = receptions.stream()
                         .filter(r -> r.getCreatedAt().isAfter(startDate) && r.getCreatedAt().isBefore(endDate))
-                        .mapToDouble(VehicleReceptionEntity::getTotalCost)
+                        .mapToDouble(ReceptionEntity::getTotalCost)
                         .sum();
             }
             

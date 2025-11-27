@@ -33,7 +33,7 @@ public class InspectionRecordEntity {
     // Link to vehicle reception (the actual service session)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reception_id", nullable = false)
-    VehicleReceptionEntity vehicleReception;
+    ReceptionEntity vehicleReception;
 
     // Action type: PENDING, INSPECT, CLEAN, REPLACE, LUBRICATE
     @Enumerated(EnumType.STRING)

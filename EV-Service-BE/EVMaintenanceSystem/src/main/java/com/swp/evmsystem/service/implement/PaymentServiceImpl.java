@@ -6,7 +6,7 @@ import com.swp.evmsystem.dto.response.PaymentResponseDTO;
 import com.swp.evmsystem.dto.PaymentStatsDTO;
 import com.swp.evmsystem.model.BookingEntity;
 import com.swp.evmsystem.model.PaymentEntity;
-import com.swp.evmsystem.model.VehicleReceptionEntity;
+import com.swp.evmsystem.model.ReceptionEntity;
 import com.swp.evmsystem.enums.PaymentMethod;
 import com.swp.evmsystem.enums.PaymentStatus;
 import com.swp.evmsystem.exception.BusinessException;
@@ -35,10 +35,10 @@ public class PaymentServiceImpl implements PaymentService {
     private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     final private PaymentRepository paymentRepository;
-    final private VehicleReceptionRepository receptionRepository;
+    final private ReceptionRepository receptionRepository;
     final private BookingRepository bookingRepository;
     final private VNPayService vnPayService;
-    final private ElectricVehicleRepository electricVehicleRepository;
+    final private VehicleRepository vehicleRepository;
     
     @Override
     @Transactional
@@ -72,7 +72,7 @@ public class PaymentServiceImpl implements PaymentService {
         
         // Link to reception if provided
         if (requestDTO.getReceptionId() != null) {
-            VehicleReceptionEntity reception = receptionRepository.findById(requestDTO.getReceptionId())
+            ReceptionEntity reception = receptionRepository.findById(requestDTO.getReceptionId())
                     .orElseThrow(() -> new ResourceNotFoundException("Reception not found with ID: " + requestDTO.getReceptionId()));
             builder.reception(reception);
         }
@@ -213,7 +213,7 @@ public class PaymentServiceImpl implements PaymentService {
         // Update reception status to PAID when payment is completed
         // Only for service payments (not booking deposits)
         if (payment.getReception() != null) {
-            VehicleReceptionEntity reception = payment.getReception();
+            ReceptionEntity reception = payment.getReception();
             reception.setStatus(com.swp.evmsystem.enums.ReceptionStatus.PAID);
             receptionRepository.save(reception);
             logger.info("Updated reception #{} status to PAID after payment completion", reception.getReceptionId());
@@ -221,11 +221,11 @@ public class PaymentServiceImpl implements PaymentService {
             // Update vehicle maintenance status to AVAILABLE
             if (payment.getLicensePlate() != null) {
                 String licensePlate = payment.getLicensePlate();
-                var vehicleOpt = electricVehicleRepository.findByLicensePlate(licensePlate);
+                var vehicleOpt = vehicleRepository.findByLicensePlate(licensePlate);
                 if (vehicleOpt.isPresent()) {
                     var vehicle = vehicleOpt.get();
                     vehicle.setMaintenanceStatus(com.swp.evmsystem.enums.EvMaintenanceStatus.AVAILABLE);
-                    electricVehicleRepository.save(vehicle);
+                    vehicleRepository.save(vehicle);
                     logger.info("Updated vehicle {} maintenance status to AVAILABLE after payment completion", licensePlate);
                 }
             }
@@ -276,7 +276,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponseDTO createPaymentFromReception(Integer receptionId) {
         logger.info("Creating payment from vehicle reception ID: {}", receptionId);
         
-        VehicleReceptionEntity reception = receptionRepository.findById(receptionId)
+        ReceptionEntity reception = receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle reception not found with ID: " + receptionId));
         
         // Check if payment already exists for this reception

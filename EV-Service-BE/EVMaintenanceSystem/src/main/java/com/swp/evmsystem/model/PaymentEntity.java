@@ -26,7 +26,7 @@ public class PaymentEntity {
     // Nullable because payments can also be for booking deposits without reception
     @ManyToOne
     @JoinColumn(name = "reception_id", referencedColumnName = "reception_id", nullable = true)
-    VehicleReceptionEntity reception;
+    ReceptionEntity reception;
     
     // Reference to booking (for deposit payments)
     // Nullable because payments from receptions don't have a booking

@@ -40,7 +40,7 @@ public class BookingController {
     public ResponseEntity<?> createBooking(
             @AuthenticationPrincipal UserEntityDetails userDetails,
             @Valid @RequestBody BookingRequest request) {
-        BookingResponseDTO response = bookingService.createBooking(request, userDetails);
+        BookingResponseDTO response = bookingService.createBooking(request, userDetails.getId());
         return ResponseEntity.created(null).body(response);
     }
 

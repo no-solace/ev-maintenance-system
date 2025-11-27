@@ -2,7 +2,7 @@ package com.swp.evmsystem.controller;
 
 import com.swp.evmsystem.dto.response.VehicleReceptionResponseDTO;
 import com.swp.evmsystem.security.UserEntityDetails;
-import com.swp.evmsystem.service.VehicleReceptionService;
+import com.swp.evmsystem.service.ReceptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,7 +17,7 @@ import java.util.List;
 @PreAuthorize("hasRole('TECHNICIAN')")
 public class TechnicianController {
 
-    private final VehicleReceptionService receptionService;
+    private final ReceptionService receptionService;
 
     @GetMapping("/my-receptions")
     public ResponseEntity<List<VehicleReceptionResponseDTO>> getMyReceptions(

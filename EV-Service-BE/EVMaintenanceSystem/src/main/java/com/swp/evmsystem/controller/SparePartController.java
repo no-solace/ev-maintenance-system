@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/spare-parts")
@@ -44,7 +45,7 @@ public class SparePartController {
         // Filter only in-stock parts
         List<SparePartResponseDTO> inStockParts = spareParts.stream()
                 .filter(part -> part.getInStock() != null && part.getInStock())
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         return ResponseEntity.ok(inStockParts);
     }
 

@@ -3,7 +3,7 @@ package com.swp.evmsystem.service;
 import com.swp.evmsystem.dto.request.BatchUpdateInspectionRequest;
 import com.swp.evmsystem.dto.response.InspectionRecordResponse;
 import com.swp.evmsystem.model.InspectionRecordEntity;
-import com.swp.evmsystem.model.VehicleReceptionEntity;
+import com.swp.evmsystem.model.ReceptionEntity;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ public interface InspectionRecordService {
     /**
      * Tự động tạo các InspectionRecord từ MaintenancePackage của VehicleReception
      */
-    void createRecordsFromPackage(VehicleReceptionEntity vehicleReception);
+    void createRecordsFromPackage(ReceptionEntity vehicleReception);
     
     /**
      * Lấy danh sách InspectionRecord theo receptionId

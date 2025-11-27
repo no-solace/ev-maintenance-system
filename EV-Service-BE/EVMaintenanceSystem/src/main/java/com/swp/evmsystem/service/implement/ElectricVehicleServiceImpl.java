@@ -4,9 +4,9 @@ import com.swp.evmsystem.dto.response.ApiResponse;
 import com.swp.evmsystem.dto.response.ElectricVehicleDTO;
 import com.swp.evmsystem.dto.response.OwnerDTO;
 import com.swp.evmsystem.model.CustomerEntity;
-import com.swp.evmsystem.model.ElectricVehicleEntity;
+import com.swp.evmsystem.model.VehicleEntity;
 import com.swp.evmsystem.mapper.ElectricVehicleMapper;
-import com.swp.evmsystem.repository.ElectricVehicleRepository;
+import com.swp.evmsystem.repository.VehicleRepository;
 import com.swp.evmsystem.service.ElectricVehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ElectricVehicleServiceImpl implements ElectricVehicleService {
 
-    final ElectricVehicleRepository electricVehicleRepository;
+    final VehicleRepository vehicleRepository;
     final ElectricVehicleMapper mapper;
 
     @Override
     public List<ElectricVehicleDTO> getVehiclesByCustomerId(Integer customerId) {
-        return electricVehicleRepository.findByOwnerId(customerId)
+        return vehicleRepository.findByOwnerId(customerId)
                 .stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
@@ -43,16 +43,16 @@ public class ElectricVehicleServiceImpl implements ElectricVehicleService {
         }
         
         // Find vehicle by VIN or license plate
-        ElectricVehicleEntity vehicle = null;
+        VehicleEntity vehicle = null;
         
         if (vin != null && !vin.trim().isEmpty()) {
             log.debug("Searching vehicle by VIN: {}", vin.trim());
-            vehicle = electricVehicleRepository.findByVin(vin.trim()).orElse(null);
+            vehicle = vehicleRepository.findByVin(vin.trim()).orElse(null);
         }
         
         if (vehicle == null && licensePlate != null && !licensePlate.trim().isEmpty()) {
             log.debug("Searching vehicle by license plate: {}", licensePlate.trim());
-            vehicle = electricVehicleRepository.findByLicensePlate(licensePlate.trim()).orElse(null);
+            vehicle = vehicleRepository.findByLicensePlate(licensePlate.trim()).orElse(null);
         }
         
         if (vehicle == null) {

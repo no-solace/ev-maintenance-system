@@ -7,7 +7,7 @@ import com.swp.evmsystem.model.MaintenancePackageEntity;
 import com.swp.evmsystem.model.SparePartEntity;
 import com.swp.evmsystem.security.UserEntityDetails;
 import com.swp.evmsystem.service.MaintenancePackageService;
-import com.swp.evmsystem.service.VehicleReceptionService;
+import com.swp.evmsystem.service.ReceptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,7 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReceptionController {
 
-    final private VehicleReceptionService receptionService;
+    final private ReceptionService receptionService;
     final private MaintenancePackageService maintenancePackageService;
 
     /**

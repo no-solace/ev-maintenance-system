@@ -16,9 +16,9 @@ import java.util.List;
 
 public interface BookingService {
 
-    BookingResponseDTO createBooking(BookingRequest request, UserEntityDetails user);
+    BookingResponseDTO createBooking(BookingRequest request, Integer customerId);
 
-    BookingEntity createBookingEntity(BookingRequest request, UserEntityDetails user);
+    BookingEntity createBookingEntity(BookingRequest request, Integer customerId);
 
     List<BookingResponseDTO> getAllBookings(Integer centerId);
 

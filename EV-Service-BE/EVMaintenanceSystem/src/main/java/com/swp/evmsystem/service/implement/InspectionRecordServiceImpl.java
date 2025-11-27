@@ -4,13 +4,13 @@ import com.swp.evmsystem.dto.response.InspectionRecordResponse;
 import com.swp.evmsystem.model.InspectionRecordEntity;
 import com.swp.evmsystem.model.InspectionTaskEntity;
 import com.swp.evmsystem.model.MaintenancePackageEntity;
-import com.swp.evmsystem.model.VehicleReceptionEntity;
+import com.swp.evmsystem.model.ReceptionEntity;
 import com.swp.evmsystem.enums.InspectionStatus;
 import com.swp.evmsystem.enums.KmInterval;
 import com.swp.evmsystem.enums.PackageLevel;
 import com.swp.evmsystem.repository.InspectionRecordRepository;
 import com.swp.evmsystem.repository.InspectionTaskRepository;
-import com.swp.evmsystem.repository.VehicleReceptionRepository;
+import com.swp.evmsystem.repository.ReceptionRepository;
 import com.swp.evmsystem.service.InspectionRecordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,11 +27,11 @@ public class InspectionRecordServiceImpl implements InspectionRecordService {
 
     private final InspectionRecordRepository inspectionRecordRepository;
     private final InspectionTaskRepository inspectionTaskRepository;
-    private final VehicleReceptionRepository vehicleReceptionRepository;
+    private final ReceptionRepository receptionRepository;
 
     @Override
     @Transactional
-    public void createRecordsFromPackage(VehicleReceptionEntity vehicleReception) {
+    public void createRecordsFromPackage(ReceptionEntity vehicleReception) {
         if (vehicleReception.getMaintenancePackage() == null) {
             log.info("No maintenance package selected for reception #{}", vehicleReception.getReceptionId());
             return;
@@ -97,7 +97,7 @@ public class InspectionRecordServiceImpl implements InspectionRecordService {
     @Override
     @Transactional
     public void createRecordsForExistingReception(Integer receptionId) {
-        VehicleReceptionEntity reception = vehicleReceptionRepository.findById(receptionId)
+        ReceptionEntity reception = receptionRepository.findById(receptionId)
                 .orElseThrow(() -> new RuntimeException("Reception not found with id: " + receptionId));
         
         // Check if records already exist
@@ -128,7 +128,7 @@ public class InspectionRecordServiceImpl implements InspectionRecordService {
 
         log.info("✅ Found {} inspection records", records.size());
         
-        VehicleReceptionEntity reception = records.get(0).getVehicleReception();
+        ReceptionEntity reception = records.get(0).getVehicleReception();
         
         // Force load lazy relationships
         reception.getCustomerName();

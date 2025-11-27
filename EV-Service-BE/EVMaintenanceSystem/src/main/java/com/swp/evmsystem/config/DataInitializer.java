@@ -251,7 +251,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     UserRepository userRepository;
-    ElectricVehicleRepository electricVehicleRepository;
+    VehicleRepository vehicleRepository;
     CenterRepository centerRepository;
     ProvinceRepository provinceRepository;
     DistrictRepository districtRepository;
@@ -404,7 +404,7 @@ public class DataInitializer implements CommandLineRunner {
             boolean isWarrantyValid = LocalDate.now().isBefore(warrantyEnd) || LocalDate.now().isEqual(warrantyEnd);
 
             // All vehicles have complete warranty information
-            ElectricVehicleEntity vehicle = ElectricVehicleEntity.builder()
+            VehicleEntity vehicle = VehicleEntity.builder()
                     .vin(vin)
                     .licensePlate(licensePlate)
                     .model(model)
@@ -417,7 +417,7 @@ public class DataInitializer implements CommandLineRunner {
                     .warrantyYears(warrantyYears)
                     .build();
 
-            electricVehicleRepository.save(vehicle);
+            vehicleRepository.save(vehicle);
         }
     }
 
@@ -480,7 +480,7 @@ public class DataInitializer implements CommandLineRunner {
             // 50 bookings per center: 10 of each service type (5 types)
             for (int serviceLoop = 1; serviceLoop <= 50; serviceLoop++) {
                 int vehicleId = ((serviceLoop - 1) % 10) + 1;
-                ElectricVehicleEntity vehicle = electricVehicleRepository.findById(vehicleId).orElse(null);
+                VehicleEntity vehicle = vehicleRepository.findById(vehicleId).orElse(null);
                 if (vehicle == null) continue;
 
                 // Random date in November 2025

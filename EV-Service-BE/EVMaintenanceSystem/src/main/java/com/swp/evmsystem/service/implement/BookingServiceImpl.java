@@ -4,7 +4,7 @@ import com.swp.evmsystem.constants.BookingConstants;
 import com.swp.evmsystem.dto.request.BookingRequest;
 import com.swp.evmsystem.dto.response.*;
 import com.swp.evmsystem.model.BookingEntity;
-import com.swp.evmsystem.model.ElectricVehicleEntity;
+import com.swp.evmsystem.model.VehicleEntity;
 import com.swp.evmsystem.model.ServiceCenterEntity;
 import com.swp.evmsystem.enums.*;
 import com.swp.evmsystem.exception.BusinessException;
@@ -12,10 +12,10 @@ import com.swp.evmsystem.exception.ResourceNotFoundException;
 import com.swp.evmsystem.mapper.ServiceCenterMapper;
 import com.swp.evmsystem.repository.BookingRepository;
 import com.swp.evmsystem.repository.CenterRepository;
-import com.swp.evmsystem.repository.ElectricVehicleRepository;
+import com.swp.evmsystem.repository.VehicleRepository;
 import com.swp.evmsystem.repository.EmployeeRepository;
-import com.swp.evmsystem.security.UserEntityDetails;
 import com.swp.evmsystem.service.BookingService;
+import com.swp.evmsystem.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,18 +38,18 @@ import java.util.stream.Stream;
 public class BookingServiceImpl implements BookingService {
 
     final private BookingRepository bookingRepository;
-    final private ElectricVehicleRepository vehicleRepository;
+    final private VehicleRepository vehicleRepository;
     final private CenterRepository centerRepository;
     final private ServiceCenterMapper serviceCenterMapper;
-    final private com.swp.evmsystem.service.EmailService emailService;
-    private final EmployeeRepository employeeRepository;
+    final private EmailService emailService;
+    final private EmployeeRepository employeeRepository;
 
     /**
      * Create new booking for customer
      */
     @Override
-    public synchronized BookingEntity createBookingEntity(BookingRequest request, UserEntityDetails user) {
-        ElectricVehicleEntity vehicle = getVehicleById(request.getEVId());
+    public synchronized BookingEntity createBookingEntity(BookingRequest request, Integer customerId) {
+        VehicleEntity vehicle = getVehicleById(request.getEVId());
         ServiceCenterEntity center = getCenterById(request.getCenterId());
         LocalDate date = request.getBookingDate();
         LocalTime time = request.getBookingTime();
@@ -59,8 +59,8 @@ public class BookingServiceImpl implements BookingService {
         String customerEmail = request.getCustomerEmail();
         String customerAddress = request.getCustomerAddress();
 
-        validateOwnershipOfVehicle(vehicle, user);
-        validateSlotAvailability(request);
+        validateOwnershipOfVehicle(vehicle, customerId);
+        validateSlotAvailability(center, date, time);
         validateVehicleAvailability(vehicle);
         vehicle.setMaintenanceStatus(EvMaintenanceStatus.BOOKED);
         vehicleRepository.save(vehicle);
@@ -82,8 +82,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public synchronized BookingResponseDTO createBooking(BookingRequest request, UserEntityDetails user) {
-        return convertToDTO(createBookingEntity(request, user));
+    public synchronized BookingResponseDTO createBooking(BookingRequest request, Integer customerId) {
+        return convertToDTO(createBookingEntity(request, customerId));
     }
 
     /**
@@ -417,7 +417,7 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private ElectricVehicleEntity getVehicleById(Integer vehicleId) {
+    private VehicleEntity getVehicleById(Integer vehicleId) {
         return vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with ID: " + vehicleId));
     }
@@ -433,7 +433,7 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private void freeUpVehicle(ElectricVehicleEntity vehicle) {
+    private void freeUpVehicle(VehicleEntity vehicle) {
         vehicle.setMaintenanceStatus(EvMaintenanceStatus.AVAILABLE);
         saveVehicleEntity(vehicle);
     }
@@ -470,17 +470,13 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private void validateVehicleAvailability(ElectricVehicleEntity electricVehicle) {
+    private void validateVehicleAvailability(VehicleEntity electricVehicle) {
         if (electricVehicle.getMaintenanceStatus() != EvMaintenanceStatus.AVAILABLE) {
             throw new BusinessException("This vehicle cannot be booked because its maintenance status is " + electricVehicle.getMaintenanceStatus());
         }
     }
 
-    private void validateSlotAvailability(BookingRequest request) {
-        ServiceCenterEntity center = getCenterById(request.getCenterId());
-        LocalDate bookingDate = request.getBookingDate();
-        LocalTime bookingTime = request.getBookingTime();
-
+    private void validateSlotAvailability(ServiceCenterEntity center, LocalDate bookingDate, LocalTime bookingTime) {
         long currentBookingCount = bookingRepository.countBookingsAtTime(
                 center.getId(),
                 bookingDate,
@@ -492,9 +488,8 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private void validateOwnershipOfVehicle(ElectricVehicleEntity vehicle, UserEntityDetails user) {
-        Integer ownerId = user.getId();
-        if (!vehicleRepository.existsByIdAndOwnerId(vehicle.getId(), ownerId)) {
+    private void validateOwnershipOfVehicle(VehicleEntity vehicle, Integer customerId) {
+        if (!vehicleRepository.existsByIdAndOwnerId(vehicle.getId(), customerId)) {
             throw new BusinessException("This vehicle does not belong to the current customer");
         }
     }
@@ -516,7 +511,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private BookingResponseDTO convertToDTO(BookingEntity booking) {
-        ElectricVehicleEntity vehicle = booking.getVehicle();
+        VehicleEntity vehicle = booking.getVehicle();
         VehicleModel model = vehicle.getModel();
 
         return BookingResponseDTO.builder()
@@ -545,7 +540,7 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
-    private void saveVehicleEntity(ElectricVehicleEntity vehicle) {
+    private void saveVehicleEntity(VehicleEntity vehicle) {
         vehicleRepository.save(vehicle);
     }
 
@@ -575,15 +570,15 @@ public class BookingServiceImpl implements BookingService {
         // Group bookings by time slot
         List<BookingEntity> currentSlotBookings = allTodayBookings.stream()
                 .filter(b -> b.getBookingTime().equals(currentSlot))
-                .collect(Collectors.toList());
+                .toList();
 
         List<BookingEntity> nextSlot1Bookings = allTodayBookings.stream()
                 .filter(b -> b.getBookingTime().equals(nextSlot1))
-                .collect(Collectors.toList());
+                .toList();
 
         List<BookingEntity> nextSlot2Bookings = allTodayBookings.stream()
                 .filter(b -> b.getBookingTime().equals(nextSlot2))
-                .collect(Collectors.toList());
+                .toList();
 
         // Build TimeSlotWithBookingsDTO for each slot
         TimeSlotWithBookingsDTO currentSlotDTO = TimeSlotWithBookingsDTO.builder()
